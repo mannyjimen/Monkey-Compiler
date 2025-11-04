@@ -1,3 +1,4 @@
+//test
 package lexer
 
 import "github.com/mannyjimen/Monkey-Compiler/token"
