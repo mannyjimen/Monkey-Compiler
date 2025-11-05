@@ -9,7 +9,7 @@ import (
 	"github.com/mannyjimen/Monkey-Compiler/token"
 )
 
-const PROMPT = "<< "
+const PROMPT = ">> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
@@ -18,7 +18,8 @@ func Start(in io.Reader, out io.Writer) {
 		fmt.Print(PROMPT)
 
 		scanned := scanner.Scan()
-		if !scanned { //no more user input
+		// fmt.Println(scanned)
+		if !scanned || len(scanner.Text()) == 0 { //no more user input
 			return
 		}
 
