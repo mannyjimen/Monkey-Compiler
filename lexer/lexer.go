@@ -1,7 +1,8 @@
-//test
 package lexer
 
-import "github.com/mannyjimen/Monkey-Compiler/token"
+import (
+	"github.com/mannyjimen/Monkey-Compiler/token"
+)
 
 type Lexer struct {
 	input        string //entire input
