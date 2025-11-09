@@ -7,7 +7,7 @@ import (
 )
 
 func TestNextToken(t *testing.T) {
-	input := `let hello = 20;
+	input := `let h4llo = 20;
 	let goodbye = 10;
 	
 	let add = fn(x, y) {
@@ -27,7 +27,7 @@ func TestNextToken(t *testing.T) {
 		expectedLiteral string
 	}{
 		{token.LET, "let"},
-		{token.IDENT, "hello"},
+		{token.IDENT, "h4llo"},
 		{token.ASSIGN, "="},
 		{token.INT, "20"},
 		{token.SEMICOLON, ";"},
@@ -88,6 +88,8 @@ func TestNextToken(t *testing.T) {
 	l := New(input)
 	for i, tt := range tests {
 		tok := l.NextToken()
+
+		// fmt.Printf("%+v\n", tok)
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",

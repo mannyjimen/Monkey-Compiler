@@ -29,6 +29,7 @@ func (l *Lexer) readChar() {
 	l.readPosition += 1
 }
 
+// lexing a token
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
@@ -102,7 +103,12 @@ func (l *Lexer) NextToken() token.Token {
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 
-	for isLetter(l.ch) {
+	//if here, we have seen a char, read it
+	l.readChar()
+
+	//continue to read chars OR digits
+	//added digits to be part of identifier AFTER first char.
+	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
 
@@ -126,6 +132,7 @@ func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
 }
 
+// helper token constructor
 func newToken(tokenType token.TokenType, ch byte) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
 }

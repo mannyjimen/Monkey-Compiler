@@ -3,6 +3,7 @@ package parser
 import (
 	"testing"
 
+	"github.com/mannyjimen/Monkey-Compiler/ast"
 	"github.com/mannyjimen/Monkey-Compiler/lexer"
 )
 
@@ -32,11 +33,40 @@ func TestLetStatement(t *testing.T) {
 		{"barfoo"},
 	}
 
-	//making compiler happy :) for now
-	_ = tests
+	for i, tt := range tests {
+		stmt := program.Statements[i]
 
-	// for i, tt := range tests {
-	// 	statement := program.Statements[i]
+		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
+			return
+		}
 
-	// }
+	}
+}
+
+func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
+	if s.TokenLiteral() != "let" {
+		t.Errorf("s.TokenLiteral not 'let', got=%q", s.TokenLiteral())
+		return false
+	}
+
+	//first time seeing type assertion EVER
+	//ok returns whether or not s is an *ast.LetStatement
+	letStmt, ok := s.(*ast.LetStatement)
+
+	if !ok {
+		t.Errorf("s is not a *ast.LetStatement, got=%T", s)
+		return false
+	}
+
+	if letStmt.Name.Value != name {
+		t.Errorf("letStmt.Name.Value is not '%s', got=%s", name, letStmt.Name.Value)
+		return false
+	}
+
+	if letStmt.Name.TokenLiteral() != name {
+		t.Errorf("s.Name not %s, got=%s", name, letStmt.Name.TokenLiteral())
+		return false
+	}
+
+	return true
 }
