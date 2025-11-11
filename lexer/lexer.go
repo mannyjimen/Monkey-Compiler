@@ -103,11 +103,8 @@ func (l *Lexer) NextToken() token.Token {
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 
-	//if here, we have seen a char, read it
-	l.readChar()
-
-	//continue to read chars OR digits
-	//added digits to be part of identifier AFTER first char.
+	//implicitly know first identifier char is alpha
+	//letting any alphanumeric char (and '_') be part of ident name (except first char)
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
