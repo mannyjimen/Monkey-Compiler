@@ -116,3 +116,42 @@ func checkParseErrors(t *testing.T, p *Parser) {
 	}
 	t.FailNow()
 }
+
+/*
+TEMPORARY TEST
+want to test
+parsing input, now we have two statements in program.Statements
+
+want to see if Let and Return statements' respective Value fields
+are getting parsed to nil
+*/
+
+func TestNilValues(t *testing.T) {
+	input := `
+	let a = 5;
+	return b;`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	ls, ok := program.Statements[0].(*ast.LetStatement)
+
+	if !ok {
+		t.Errorf("1st stmt not an *ast.LetStatement, got %T type", program.Statements[0])
+	}
+
+	if ls.Value != nil {
+		t.Errorf("LetStatement value not being set to nil (temp test)")
+	}
+
+	rs, ok := program.Statements[1].(*ast.ReturnStatement)
+
+	if !ok {
+		t.Errorf("2nd stmt not an *ast.ReturnStatement, got %T type", program.Statements[1])
+	}
+
+	if rs.ReturnValue != nil {
+		t.Errorf("ReturnStatement's ReturnValue is not being set to nil (temp test)")
+	}
+}
