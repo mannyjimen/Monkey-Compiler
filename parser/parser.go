@@ -2,10 +2,28 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/mannyjimen/Monkey-Compiler/ast"
 	"github.com/mannyjimen/Monkey-Compiler/lexer"
 	"github.com/mannyjimen/Monkey-Compiler/token"
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
+
+// functions are first class citizens...
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
 )
 
 type Parser struct {
@@ -14,6 +32,9 @@ type Parser struct {
 
 	currToken token.Token
 	peekToken token.Token
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 // concise same names is fine for idiomatic go ({l: l})
@@ -21,6 +42,11 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
 		l:      l,
 		errors: []string{}}
+
+	//registering expression parse functions
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 
 	//setting up parser with curr and peek tokens
 	p.nextToken()
@@ -57,7 +83,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -75,9 +101,14 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	//TEMPORARY SKIPPING
-	//skipping expression parsing
-	for !p.currTokenIs(token.SEMICOLON) {
+	// stmt.Value = p.parseExpression(LOWEST)
+
+	// //syntax error
+	// if !p.expectPeek(token.SEMICOLON) {
+	// 	return nil
+	// }
+
+	for p.currToken.Type != token.SEMICOLON {
 		p.nextToken()
 	}
 
@@ -88,13 +119,61 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.currToken}
 
 	p.nextToken()
-	//TEMPORARY SKIPPING
-	//skipping expression parsing
-	for !p.currTokenIs(token.SEMICOLON) {
+
+	// stmt.ReturnValue = p.parseExpression(LOWEST)
+
+	// //syntax error
+	// if !p.expectPeek(token.SEMICOLON) {
+	// 	return nil
+	// }
+
+	for p.currToken.Type != token.SEMICOLON {
 		p.nextToken()
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+// handling the start of parsing an expression
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix, ok := p.prefixParseFns[p.currToken.Type]
+
+	if !ok {
+		return nil
+	}
+
+	leftExpr := prefix()
+	return leftExpr
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	literal := &ast.IntegerLiteral{Token: p.currToken}
+
+	value, err := strconv.ParseInt(p.currToken.Literal, 10, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as 64 bit integer", p.currToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	literal.Value = value
+	return literal
 }
 
 func (p *Parser) currTokenIs(t token.TokenType) bool {
@@ -113,6 +192,16 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 
 	p.peekError(t)
 	return false
+}
+
+// helper func to add prefix fn to prefixfns map
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+// ~ 	~ 		 add infix fn to infixfns map
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
 
 // ERROR HANDLING
