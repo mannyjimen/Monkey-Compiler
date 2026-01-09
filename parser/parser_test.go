@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mannyjimen/Monkey-Compiler/ast"
@@ -223,4 +224,72 @@ func TestIntegerLiteralExpression(t *testing.T) {
 		t.Errorf("integerLiteral.TokenLiteral is incorrect, expected '5', got %s", literal.TokenLiteral())
 	}
 
+}
+
+func TestParsingPrefixOperators(t *testing.T) {
+	prefixTests := []struct {
+		testCase     string
+		operator     string
+		integerValue int64
+	}{
+		{`!5;`, `!`, 5},
+		{`-4;`, `-`, 4},
+	}
+
+	for _, tt := range prefixTests {
+		l := lexer.New(tt.testCase)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		//checking length of program
+		if len(program.Statements) != 1 {
+			t.Fatalf("Incorrect number of statements parsed, expected 1, got %d", len(program.Statements))
+		}
+
+		// fmt.Println(program.Statements[0])
+
+		//checking that it was parsed as an ExpressionStatement
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not an expression statement, got %T", program.Statements[0])
+		}
+
+		//checking that is was parsed as PrefixExpression
+		expr, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("stmt is not a ast.PrefixExpression, got %T", stmt.Expression)
+		}
+
+		if expr.Operator != tt.operator {
+			t.Fatalf("expr operator is not %s, got %s", tt.operator, expr.Operator)
+		}
+
+		if !testIntegerLiteral(t, expr.Right, tt.integerValue) {
+			return
+		}
+
+	}
+}
+
+func testIntegerLiteral(t *testing.T, expr ast.Expression, value int64) bool {
+	integerLitExpr, ok := expr.(*ast.IntegerLiteral)
+
+	if !ok {
+		t.Errorf("Expression is not an *ast.IntegerLiteral, got %T", expr)
+		return false
+	}
+
+	if integerLitExpr.Value != value {
+		t.Errorf("Integer value is incorrect, expected %q, got %q", value, integerLitExpr)
+		return false
+	}
+
+	if integerLitExpr.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("*ast.IntegerLiteral.TokenLiteral() method is incorrect, expected %d, got %s",
+			value, integerLitExpr.TokenLiteral())
+		return false
+	}
+
+	return true
 }

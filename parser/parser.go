@@ -47,6 +47,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.BANG, p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
 	//setting up parser with curr and peek tokens
 	p.nextToken()
@@ -68,11 +70,6 @@ func (p *Parser) ParseProgram() *ast.Program {
 		p.nextToken()
 	}
 	return program
-}
-
-func (p *Parser) nextToken() {
-	p.currToken = p.peekToken
-	p.peekToken = p.l.NextToken()
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -108,6 +105,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	// 	return nil
 	// }
 
+	//placeholder parse expression (skip)
 	for p.currToken.Type != token.SEMICOLON {
 		p.nextToken()
 	}
@@ -127,6 +125,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	// 	return nil
 	// }
 
+	//placeholder parse expression (skip)
 	for p.currToken.Type != token.SEMICOLON {
 		p.nextToken()
 	}
@@ -151,9 +150,11 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix, ok := p.prefixParseFns[p.currToken.Type]
 
 	if !ok {
+		p.noPrefixFuncFound(p.currToken.Type)
 		return nil
 	}
 
+	_ = precedence
 	leftExpr := prefix()
 	return leftExpr
 }
@@ -174,6 +175,24 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 
 	literal.Value = value
 	return literal
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	prefixExpr := &ast.PrefixExpression{
+		Token:    p.currToken,
+		Operator: p.currToken.Literal}
+
+	p.nextToken()
+	prefixExpr.Right = p.parseExpression(PREFIX)
+
+	return prefixExpr
+}
+
+//helper functions
+
+func (p *Parser) nextToken() {
+	p.currToken = p.peekToken
+	p.peekToken = p.l.NextToken()
 }
 
 func (p *Parser) currTokenIs(t token.TokenType) bool {
@@ -199,7 +218,7 @@ func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
 	p.prefixParseFns[tokenType] = fn
 }
 
-// ~ 	~ 		 add infix fn to infixfns map
+// helper func to add infix fn to infixfns map
 func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
 }
@@ -211,6 +230,10 @@ func (p *Parser) Errors() []string {
 
 func (p *Parser) peekError(t token.TokenType) {
 	msg := fmt.Sprintf("expected next token to be %s, got %s instead", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
+}
 
+func (p *Parser) noPrefixFuncFound(t token.TokenType) {
+	msg := fmt.Sprintf("no prefix function found for token '%s' found", t)
 	p.errors = append(p.errors, msg)
 }
