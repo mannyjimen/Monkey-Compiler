@@ -272,6 +272,124 @@ func TestParsingPrefixOperators(t *testing.T) {
 	}
 }
 
+func TestParsingInfixOperators(t *testing.T) {
+	infixTests := []struct {
+		testCase   string
+		leftValue  int64
+		operator   string
+		rightValue int64
+	}{
+		{"5+5;", 5, "+", 5},
+		{"5-5;", 5, "-", 5},
+		{"5*5;", 5, "*", 5},
+		{"5/5;", 5, "/", 5},
+		{"5<5;", 5, "<", 5},
+		{"5>5;", 5, ">", 5},
+		{"5==5;", 5, "==", 5},
+		{"5!=5;", 5, "!=", 5},
+	}
+
+	for _, tt := range infixTests {
+		l := lexer.New(tt.testCase)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Incorrect number of statements parsed, expected 1, got %d", len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not an *ast.ExpressionStatement, got %T", program.Statements[0])
+		}
+
+		expr, ok := stmt.Expression.(*ast.InfixExpression)
+		if !ok {
+			t.Fatalf("stmt.Expression is not an *ast.InfixExpression, got %T", stmt.Expression)
+		}
+
+		if !testIntegerLiteral(t, expr.Left, tt.leftValue) {
+			return
+		}
+
+		if expr.Operator != tt.operator {
+			t.Errorf("expr operator is incorrect,  expected %s, got %s", tt.operator, expr.Operator)
+		}
+
+		if !testIntegerLiteral(t, expr.Right, tt.rightValue) {
+			return
+		}
+	}
+}
+
+func TestOperatorPrecedenceParsing(t *testing.T) {
+	tests := []struct {
+		testCase string
+		expected string
+	}{
+		{
+			"-a * b",
+			"((-a) * b)",
+		},
+		{
+			"!-a",
+			"(!(-a))",
+		},
+		{
+			"a + b + c",
+			"((a + b) + c)",
+		},
+		{
+			"a + b - c",
+			"((a + b) - c)",
+		},
+		{
+			"a * b * c",
+			"((a * b) * c)",
+		},
+		{
+			"a * b / c",
+			"((a * b) / c)",
+		},
+		{
+			"5+4*6;",
+			"(5 + (4 * 6))",
+		},
+		{
+			"a + b - c / 4 + d * 5",
+			"(((a + b) - (c / 4)) + (d * 5))",
+		},
+		{
+			"5 < 4 != 4 > 6",
+			"((5 < 4) != (4 > 6))",
+		},
+		{
+			"5 < 4 * 7 == 4 - 3 > 6",
+			"((5 < (4 * 7)) == ((4 - 3) > 6))",
+		},
+		{
+			"5 - 4 * 7 / 4 + 6 - c * d + z",
+			"((((5 - ((4 * 7) / 4)) + 6) - (c * d)) + z)",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.testCase)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		output := program.String()
+
+		if output != tt.expected {
+			t.Errorf("Parsed statement incorrectly, expected %q, got %q",
+				tt.expected,
+				output)
+		}
+	}
+}
+
 func testIntegerLiteral(t *testing.T, expr ast.Expression, value int64) bool {
 	integerLitExpr, ok := expr.(*ast.IntegerLiteral)
 
