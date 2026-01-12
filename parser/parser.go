@@ -115,22 +115,17 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	//currToken is now the IDENT token
 	stmt.Name = &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
 
 	if !p.expectPeek(token.ASSIGN) {
 		return nil
 	}
 
-	// stmt.Value = p.parseExpression(LOWEST)
+	p.nextToken()
 
-	// //syntax error
-	// if !p.expectPeek(token.SEMICOLON) {
-	// 	return nil
-	// }
+	stmt.Value = p.parseExpression(LOWEST)
 
-	//placeholder parse expression (skip)
-	for p.currToken.Type != token.SEMICOLON {
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -142,15 +137,9 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	p.nextToken()
 
-	// stmt.ReturnValue = p.parseExpression(LOWEST)
+	stmt.ReturnValue = p.parseExpression(LOWEST)
 
-	// //syntax error
-	// if !p.expectPeek(token.SEMICOLON) {
-	// 	return nil
-	// }
-
-	//placeholder parse expression (skip)
-	for p.currToken.Type != token.SEMICOLON {
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 

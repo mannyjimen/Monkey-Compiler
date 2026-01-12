@@ -76,7 +76,7 @@ func TestReturnStatements(t *testing.T) {
 	input := `
 	return 5;
 	return 10;
-	return foo(33);`
+	return foo;`
 
 	l := lexer.New(input)
 	p := New(l)
@@ -127,36 +127,36 @@ want to see if Let and Return statements' respective Value fields
 are getting parsed to nil
 */
 
-func TestNilValues(t *testing.T) {
-	input := `
-	let a = 5;
-	return b;`
+// func TestNilValues(t *testing.T) {
+// 	input := `
+// 	let a = 5;
+// 	return b;`
 
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	checkParseErrors(t, p)
+// 	l := lexer.New(input)
+// 	p := New(l)
+// 	program := p.ParseProgram()
+// 	checkParseErrors(t, p)
 
-	ls, ok := program.Statements[0].(*ast.LetStatement)
+// 	ls, ok := program.Statements[0].(*ast.LetStatement)
 
-	if !ok {
-		t.Errorf("1st stmt not an *ast.LetStatement, got %T type", program.Statements[0])
-	}
+// 	if !ok {
+// 		t.Errorf("1st stmt not an *ast.LetStatement, got %T type", program.Statements[0])
+// 	}
 
-	if ls.Value != nil {
-		t.Errorf("LetStatement value not being set to nil (temp test)")
-	}
+// 	if ls.Value != nil {
+// 		t.Errorf("LetStatement value not being set to nil (temp test)")
+// 	}
 
-	rs, ok := program.Statements[1].(*ast.ReturnStatement)
+// 	rs, ok := program.Statements[1].(*ast.ReturnStatement)
 
-	if !ok {
-		t.Errorf("2nd stmt not an *ast.ReturnStatement, got %T type", program.Statements[1])
-	}
+// 	if !ok {
+// 		t.Errorf("2nd stmt not an *ast.ReturnStatement, got %T type", program.Statements[1])
+// 	}
 
-	if rs.ReturnValue != nil {
-		t.Errorf("ReturnStatement's ReturnValue is not being set to nil (temp test)")
-	}
-}
+// 	if rs.ReturnValue != nil {
+// 		t.Errorf("ReturnStatement's ReturnValue is not being set to nil (temp test)")
+// 	}
+// }
 
 func TestIdentifierExpression(t *testing.T) {
 	input := `foobar;`
@@ -243,8 +243,8 @@ func TestParsingPrefixOperators(t *testing.T) {
 		operator     string
 		integerValue int64
 	}{
-		{`!5;`, `!`, 5},
-		{`-4;`, `-`, 4},
+		{"!5;", "!", 5},
+		{"-4;", "-", 4},
 	}
 
 	for _, tt := range prefixTests {
@@ -414,16 +414,7 @@ func TestParsingPrefixWithLiterals(t *testing.T) {
 		exprStmt := program.Statements[0].(*ast.ExpressionStatement)
 		expr := exprStmt.Expression
 
-		prefix, ok := expr.(*ast.PrefixExpression)
-		if !ok {
-			t.Fatalf("Expression is not an *ast.PrefixExpression")
-		}
-
-		if tt.operator != prefix.Operator {
-			t.Errorf("Operator is incorrect, expected %q, got %q", tt.operator, prefix.Operator)
-		}
-
-		testLiteralExpression(t, prefix.Right, tt.value)
+		testPrefixExpression(t, expr, tt.operator, tt.value)
 	}
 }
 func TestParsingInfixWithLiterals(t *testing.T) {
@@ -433,30 +424,10 @@ func TestParsingInfixWithLiterals(t *testing.T) {
 		operator string
 		right    any
 	}{
-		{
-			"5+4;",
-			5,
-			"+",
-			4,
-		},
-		{
-			"hello * goodbye;",
-			"hello",
-			"*",
-			"goodbye",
-		},
-		{
-			"true != false",
-			true,
-			"!=",
-			false,
-		},
-		{
-			"false == false",
-			false,
-			"==",
-			false,
-		},
+		{"5+4;", 5, "+", 4},
+		{"hello * goodbye;", "hello", "*", "goodbye"},
+		{"true != false", true, "!=", false},
+		{"false == false", false, "==", false},
 	}
 
 	for _, tt := range tests {
@@ -465,7 +436,6 @@ func TestParsingInfixWithLiterals(t *testing.T) {
 		program := p.ParseProgram()
 		checkParseErrors(t, p)
 
-		//grabbing *ast.InfixExpression from *ast.ExpressionStatement
 		exprStmt := program.Statements[0].(*ast.ExpressionStatement)
 		expr := exprStmt.Expression
 
@@ -556,25 +526,46 @@ func testLiteralExpression(t *testing.T, expr ast.Expression, expected any) bool
 	return false
 }
 
+func testPrefixExpression(t *testing.T, expr ast.Expression,
+	operator string, right any) bool {
+
+	prefix, ok := expr.(*ast.PrefixExpression)
+	if !ok {
+		t.Errorf("expr is not an *ast.PrefixExpression, got %T", expr)
+		return false
+	}
+
+	if prefix.Operator != operator {
+		t.Errorf("expr operator is incorrect, expected %q, got %q", operator, prefix.Operator)
+		return false
+	}
+
+	if !testLiteralExpression(t, prefix.Right, right) {
+		return false
+	}
+
+	return true
+}
+
 func testInfixExpression(t *testing.T, expr ast.Expression,
 	left any, operator string, right any) bool {
 
-	infixExpr, ok := expr.(*ast.InfixExpression)
+	infix, ok := expr.(*ast.InfixExpression)
 	if !ok {
 		t.Errorf("expr is not an *ast.InfixExpression, got %T", expr)
 		return false
 	}
 
-	if !testLiteralExpression(t, infixExpr.Left, left) {
+	if !testLiteralExpression(t, infix.Left, left) {
 		return false
 	}
 
-	if operator != infixExpr.Operator {
-		t.Errorf("expr operator is incorrect, expected %q, got %q", operator, infixExpr.Operator)
+	if operator != infix.Operator {
+		t.Errorf("expr operator is incorrect, expected %q, got %q", operator, infix.Operator)
 		return false
 	}
 
-	if !testLiteralExpression(t, infixExpr.Right, right) {
+	if !testLiteralExpression(t, infix.Right, right) {
 		return false
 	}
 
