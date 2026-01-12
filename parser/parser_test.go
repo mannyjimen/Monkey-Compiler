@@ -106,6 +106,7 @@ func TestReturnStatements(t *testing.T) {
 }
 
 func checkParseErrors(t *testing.T, p *Parser) {
+	t.Helper()
 	errors := p.Errors()
 
 	if len(errors) == 0 {
@@ -235,6 +236,104 @@ func TestBooleanExpression(t *testing.T) {
 
 	if literal.TokenLiteral() != "true" {
 		t.Errorf("*ast.Boolean.TokenLiteral is incorrect, expected 'true', got %q", literal.TokenLiteral())
+	}
+}
+
+func TestIfExpression(t *testing.T) {
+	input := `if (x < y) { x }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	checkOneStatementInProgram(t, program)
+	stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+
+	expr := stmt.Expression
+
+	ifExpr, ok := expr.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("expr is not an *ast.IfExpression, got %T", expr)
+	}
+
+	if !testInfixExpression(t, ifExpr.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(ifExpr.Consequence.Statements) != 1 {
+		t.Fatalf("Consequence has incorrect amount of statements, expected 1, got %d", len(ifExpr.Consequence.Statements))
+	}
+
+	exprStmt, ok := ifExpr.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence's only statement is not an *ast.ExpressionStatement, got %T",
+			ifExpr.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, exprStmt.Expression, "x") {
+		return
+	}
+
+	if ifExpr.Alternative != nil {
+		t.Fatalf("Alternative is not nil, got %+v", ifExpr.Alternative)
+	}
+}
+
+func TestIfElseExpression(t *testing.T) {
+	input := `if (x < y) { x } else { y }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	checkOneStatementInProgram(t, program)
+	stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+
+	expr := stmt.Expression
+
+	ifExpr, ok := expr.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("expr is not an *ast.IfExpression, got %T", expr)
+	}
+
+	if !testInfixExpression(t, ifExpr.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(ifExpr.Consequence.Statements) != 1 {
+		t.Fatalf("Consequence has incorrect amount of statements, expected 1, got %d", len(ifExpr.Consequence.Statements))
+	}
+
+	consequence, ok := ifExpr.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence's only statement is not an *ast.ExpressionStatement, got %T",
+			ifExpr.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	//alternative testing
+
+	if ifExpr.Alternative == nil {
+		t.Fatalf("Alternative was incorrectly parsed as nil")
+	}
+
+	if len(ifExpr.Alternative.Statements) != 1 {
+		t.Fatalf("Alternative has incorrect amount of statements, expected 1, got %d", len(ifExpr.Alternative.Statements))
+	}
+
+	alternative, ok := ifExpr.Alternative.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Alternative's only statement is not an *ast.ExpressionStatement, got %T",
+			ifExpr.Alternative.Statements[0])
+	}
+
+	if !testIdentifier(t, alternative.Expression, "y") {
+		return
 	}
 }
 
@@ -376,6 +475,22 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"true",
 			"true",
+		},
+		{
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"-(2 + 2)",
+			"(-(2 + 2))",
+		},
+		{
+			"!(true == true)",
+			"(!(true == true))",
 		},
 	}
 
