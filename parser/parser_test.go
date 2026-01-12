@@ -45,6 +45,7 @@ func TestLetStatements(t *testing.T) {
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
+	t.Helper()
 	if s.TokenLiteral() != "let" {
 		t.Errorf("s.TokenLiteral not 'let', got %q", s.TokenLiteral())
 		return false
@@ -414,7 +415,9 @@ func TestParsingPrefixWithLiterals(t *testing.T) {
 		exprStmt := program.Statements[0].(*ast.ExpressionStatement)
 		expr := exprStmt.Expression
 
-		testPrefixExpression(t, expr, tt.operator, tt.value)
+		if !testPrefixExpression(t, expr, tt.operator, tt.value) {
+			continue
+		}
 	}
 }
 func TestParsingInfixWithLiterals(t *testing.T) {
@@ -439,11 +442,14 @@ func TestParsingInfixWithLiterals(t *testing.T) {
 		exprStmt := program.Statements[0].(*ast.ExpressionStatement)
 		expr := exprStmt.Expression
 
-		testInfixExpression(t, expr, tt.left, tt.operator, tt.right)
+		if !testInfixExpression(t, expr, tt.left, tt.operator, tt.right) {
+			continue
+		}
 	}
 }
 
 func testIntegerLiteral(t *testing.T, expr ast.Expression, value int64) bool {
+	t.Helper()
 	integerLitExpr, ok := expr.(*ast.IntegerLiteral)
 
 	if !ok {
@@ -466,6 +472,7 @@ func testIntegerLiteral(t *testing.T, expr ast.Expression, value int64) bool {
 }
 
 func testIdentifier(t *testing.T, expr ast.Expression, value string) bool {
+	t.Helper()
 	ident, ok := expr.(*ast.Identifier)
 
 	if !ok {
@@ -487,6 +494,7 @@ func testIdentifier(t *testing.T, expr ast.Expression, value string) bool {
 }
 
 func testBooleanLiteral(t *testing.T, expr ast.Expression, value bool) bool {
+	t.Helper()
 	boolExpr, ok := expr.(*ast.Boolean)
 
 	if !ok {
@@ -511,6 +519,7 @@ func testBooleanLiteral(t *testing.T, expr ast.Expression, value bool) bool {
 
 // tests whether expression `expr` matches literal `expected`
 func testLiteralExpression(t *testing.T, expr ast.Expression, expected any) bool {
+	t.Helper()
 	switch v := expected.(type) {
 	case int:
 		return testIntegerLiteral(t, expr, int64(v))
@@ -529,6 +538,7 @@ func testLiteralExpression(t *testing.T, expr ast.Expression, expected any) bool
 func testPrefixExpression(t *testing.T, expr ast.Expression,
 	operator string, right any) bool {
 
+	t.Helper()
 	prefix, ok := expr.(*ast.PrefixExpression)
 	if !ok {
 		t.Errorf("expr is not an *ast.PrefixExpression, got %T", expr)
@@ -550,6 +560,7 @@ func testPrefixExpression(t *testing.T, expr ast.Expression,
 func testInfixExpression(t *testing.T, expr ast.Expression,
 	left any, operator string, right any) bool {
 
+	t.Helper()
 	infix, ok := expr.(*ast.InfixExpression)
 	if !ok {
 		t.Errorf("expr is not an *ast.InfixExpression, got %T", expr)
@@ -573,12 +584,14 @@ func testInfixExpression(t *testing.T, expr ast.Expression,
 }
 
 func checkOneStatementInProgram(t *testing.T, program *ast.Program) {
+	t.Helper()
 	if len(program.Statements) != 1 {
 		t.Fatalf("Incorrect amount of statements in program, expected 1, got %d", len(program.Statements))
 	}
 }
 
 func checkAndGetExpressionStatement(t *testing.T, stmt ast.Statement) *ast.ExpressionStatement {
+	t.Helper()
 	exprStmt, ok := stmt.(*ast.ExpressionStatement)
 	if !ok {
 		t.Fatalf("program.Statements[0] is not an *ast.ExpressionStatement, got %T", stmt)
