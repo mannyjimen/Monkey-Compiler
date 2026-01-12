@@ -64,6 +64,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 
 	//registering expression infix parse funcs
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -298,6 +299,56 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return blockStmt
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	functionLit := &ast.FunctionLiteral{
+		Token: p.currToken,
+	}
+
+	//skip 'fn'
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	functionLit.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	functionLit.Body = p.parseBlockStatement()
+
+	return functionLit
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	params := []*ast.Identifier{}
+
+	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+
+		expr := p.parseExpression(LOWEST)
+
+		ident, ok := expr.(*ast.Identifier)
+		if !ok {
+			msg := fmt.Sprintf("Expected identifier for function parameters, got %T", expr)
+			p.errors = append(p.errors, msg)
+			return nil
+		}
+
+		params = append(params, ident)
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken()
+		}
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return params
 }
 
 //helper functions

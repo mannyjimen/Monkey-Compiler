@@ -337,6 +337,74 @@ func TestIfElseExpression(t *testing.T) {
 	}
 }
 
+func TestFunctionLiteralExpression(t *testing.T) {
+	input := `fn(x, y) { x + y; }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	checkOneStatementInProgram(t, program)
+	stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+	expr := stmt.Expression
+
+	funcLitExpr, ok := expr.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("expr is not an *ast.FunctionLiteral, got %T", expr)
+	}
+
+	//testing parsed parameters
+
+	if len(funcLitExpr.Parameters) != 2 {
+		t.Fatalf("FunctionLiteral parameter count is incorrect, expected 2, got %d", len(funcLitExpr.Parameters))
+	}
+
+	testLiteralExpression(t, funcLitExpr.Parameters[0], "x")
+	testLiteralExpression(t, funcLitExpr.Parameters[1], "y")
+
+	//testing parsed block
+
+	if len(funcLitExpr.Body.Statements) != 1 {
+		t.Fatalf("FunctionLiteral block statement count is incorrect, expected 1, got %d",
+			len(funcLitExpr.Body.Statements))
+	}
+
+	bodyStmt := checkAndGetExpressionStatement(t, funcLitExpr.Body.Statements[0])
+
+	testInfixExpression(t, bodyStmt.Expression, "x", "+", "y")
+
+}
+
+func TestParsingFunctionParameters(t *testing.T) {
+	tests := []struct {
+		input      string
+		parameters []string
+	}{{"fn() { x };", []string{}},
+		{"fn(x) { x };", []string{"x"}},
+		{"fn(x, y, z) { x };", []string{"x", "y", "z"}},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		checkOneStatementInProgram(t, program)
+		stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+		function := stmt.Expression.(*ast.FunctionLiteral)
+
+		if len(function.Parameters) != len(tt.parameters) {
+			t.Fatalf("Incorrect parameter count, expected %d, got %d", len(tt.parameters), len(function.Parameters))
+		}
+
+		for i, param := range function.Parameters {
+			testLiteralExpression(t, param, tt.parameters[i])
+		}
+	}
+}
+
 func TestParsingPrefixOperators(t *testing.T) {
 	prefixTests := []struct {
 		testCase     string
