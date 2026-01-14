@@ -378,8 +378,8 @@ func TestFunctionLiteralExpression(t *testing.T) {
 
 func TestParsingFunctionParameters(t *testing.T) {
 	tests := []struct {
-		input      string
-		parameters []string
+		input              string
+		expectedParameters []string
 	}{{"fn() { x };", []string{}},
 		{"fn(x) { x };", []string{"x"}},
 		{"fn(x, y, z) { x };", []string{"x", "y", "z"}},
@@ -395,12 +395,95 @@ func TestParsingFunctionParameters(t *testing.T) {
 		stmt := checkAndGetExpressionStatement(t, program.Statements[0])
 		function := stmt.Expression.(*ast.FunctionLiteral)
 
-		if len(function.Parameters) != len(tt.parameters) {
-			t.Fatalf("Incorrect parameter count, expected %d, got %d", len(tt.parameters), len(function.Parameters))
+		if len(function.Parameters) != len(tt.expectedParameters) {
+			t.Fatalf("Incorrect parameter count, expected %d, got %d", len(tt.expectedParameters), len(function.Parameters))
 		}
 
 		for i, param := range function.Parameters {
-			testLiteralExpression(t, param, tt.parameters[i])
+			testLiteralExpression(t, param, tt.expectedParameters[i])
+		}
+	}
+}
+
+func TestParsingCallExpresionInfix(t *testing.T) {
+	input := "add(8, 1 + 2, 3 * 4);"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	checkOneStatementInProgram(t, program)
+	stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+	expr := stmt.Expression
+
+	callExpr, ok := expr.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("Expected type *ast.CallExpression, got %T", expr)
+	}
+
+	if !testIdentifier(t, callExpr.Function, "add") {
+		t.Errorf("Expected function name 'add', got %q", callExpr.Function.String())
+	}
+
+	if len(callExpr.Arguments) != 3 {
+		t.Fatalf("Incorrect amount of arguments, expected 3, got %d", len(callExpr.Arguments))
+	}
+
+	testIntegerLiteral(t, callExpr.Arguments[0], 8)
+	testInfixExpression(t, callExpr.Arguments[1], 1, "+", 2)
+	testInfixExpression(t, callExpr.Arguments[2], 3, "*", 4)
+}
+
+func TestParsingCallExpression(t *testing.T) {
+	tests := []struct {
+		input             string
+		expectedFuncName  string
+		expectedArguments []any
+	}{
+		{
+			"hello();",
+			"hello",
+			[]any{},
+		},
+		{
+			input:             "hello(1);",
+			expectedFuncName:  "hello",
+			expectedArguments: []any{1},
+		},
+		{
+			input:             "goodbye(1, charlie, 3);",
+			expectedFuncName:  "goodbye",
+			expectedArguments: []any{1, "charlie", 3},
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		checkOneStatementInProgram(t, program)
+		stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+		expr := stmt.Expression
+		functionCall, ok := expr.(*ast.CallExpression)
+		if !ok {
+			t.Fatalf("Expected type *ast.FunctionCall, got %T", expr)
+		}
+
+		if !testIdentifier(t, functionCall.Function, tt.expectedFuncName) {
+			t.Errorf("Incorrect function name parsed, expected %q, got %q",
+				tt.expectedFuncName, functionCall.Function.TokenLiteral())
+		}
+
+		if len(functionCall.Arguments) != len(tt.expectedArguments) {
+			t.Fatalf("Incorrect argument count, expected %d, got %d",
+				len(tt.expectedArguments), len(functionCall.Arguments))
+		}
+
+		for i, arg := range functionCall.Arguments {
+			testLiteralExpression(t, arg, tt.expectedArguments[i])
 		}
 	}
 }
@@ -559,6 +642,18 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"!(true == true)",
 			"(!(true == true))",
+		},
+		{
+			"5 + add(2 * 3)",
+			"(5 + add((2 * 3)))",
+		},
+		{
+			"add(2 * 3, 2, 4 + 5 / 3, charlie, add(beta, 5))",
+			"add((2 * 3), 2, (4 + (5 / 3)), charlie, add(beta, 5))",
+		},
+		{
+			"(5)",
+			"5",
 		},
 	}
 

@@ -266,3 +266,44 @@ func (fl *FunctionLiteral) String() string {
 
 	return out.String()
 }
+
+/*
+
+CallToFunction
+:
+token
+identifier of function it is calling
+list of parameters, slice of ast.Expression
+
+this is going to be a prefix expression call for identifier, but how do we know if it is a call?
+if right after parsing the identifier, our p.peekToken is a leftparen.
+then, we parse our arguments
+and expect an rparen.
+then we are done parsing our FunctionCall
+*/
+
+type CallExpression struct {
+	Token     token.Token
+	Function  Expression
+	Arguments []Expression
+}
+
+func (fc *CallExpression) expressionNode() {}
+func (fc *CallExpression) TokenLiteral() string {
+	return fc.Token.Literal
+}
+func (fc *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, arg := range fc.Arguments {
+		args = append(args, arg.String())
+	}
+
+	out.WriteString(fc.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+
+	return out.String()
+}

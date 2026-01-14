@@ -29,6 +29,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.ASTERISK: PRODUCT,
 	token.SLASH:    PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 // functions are first class citizens...
@@ -76,6 +77,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	//setting up parser with curr and peek tokens
 	p.nextToken()
@@ -349,6 +351,40 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	return params
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	funcCall := &ast.CallExpression{
+		Token:    p.currToken,
+		Function: function,
+	}
+
+	funcCall.Arguments = p.parseCallArguments()
+
+	return funcCall
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+
+	arguments := []ast.Expression{}
+
+	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+
+		arg := p.parseExpression(LOWEST)
+
+		arguments = append(arguments, arg)
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken()
+		}
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return arguments
 }
 
 //helper functions
