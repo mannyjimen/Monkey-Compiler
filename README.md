@@ -1,4 +1,4 @@
-#Monkey Compiler
+# Monkey Compiler
 
 Monkey-Compiler is an implementation of the compiler for *Monkey Programming Language* by Thorsten Ball, with a bit of added features.
 
@@ -30,7 +30,7 @@ Monkey-Compiler includes:
 
 ## Technical Highlights
 
-**Parser**: Implements pratt-parsing, highly efficient precedence-based parsing algorithm for expressions.  
+**Parser**: Implements pratt parsing, highly efficient precedence-based parsing algorithm for expressions.  
 **Idiomatic Go**: Using (at least trying to) modern Go patterns, especially utilizing Go's amazing testing package.  
 **Stack-Based VM**: Currently building a custom virtual machine, more to come soon...  
 
