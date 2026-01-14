@@ -103,3 +103,22 @@ func TestNextToken(t *testing.T) {
 		}
 	}
 }
+
+func TestIdentLexing(t *testing.T) {
+	tests := []struct {
+		input   string
+		isIdent bool
+	}{
+		{"hello", true},
+		{"5hello", false},
+	}
+
+	for _, tt := range tests {
+		l := New(tt.input)
+		tok := l.NextToken()
+
+		if (tok.Type == token.IDENT) != (tt.isIdent) {
+			t.Errorf("incorrectly parsed ident, %q is not an ident", tt.input)
+		}
+	}
+}
