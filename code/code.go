@@ -14,7 +14,8 @@ const (
 	OpConstant Opcode = iota
 )
 
-// constructing bytecode instruction, op code and operands -> slice of bytes
+// constructing bytecode instruction, op code and operand constant pool addresses
+// returns slice of bytes (instruction turned to bytecode)
 func Make(op Opcode, operands ...int) []byte {
 	def, ok := definitions[op]
 	if !ok {

@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mannyjimen/Monkey-Compiler/ast"
@@ -58,11 +59,64 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 }
 
 func testInstructions(actual code.Instructions, expected []code.Instructions) error {
+	concatted := concatInstructions(expected)
+
+	if len(actual) != len(concatted) {
+		return fmt.Errorf("incorrect instruction length, \nexpected:%q\ngot:%q",
+			concatted, actual)
+	}
+
+	for i, instr := range actual {
+		if concatted[i] != instr {
+			return fmt.Errorf("wrong instruction at %d, \nexpected:%q\ngot:%q",
+				i, concatted, actual)
+		}
+	}
+
 	return nil
 }
 
 func testConstants(actual []object.Object, expected []any) error {
+	if len(actual) != len(expected) {
+		return fmt.Errorf("incorrect number of constants, expected %d, got %d",
+			len(expected), len(actual))
+	}
+
+	for i, constant := range expected {
+		switch constant := constant.(type) {
+		case int:
+			err := testIntegerObject(int64(constant), actual[i])
+			if err != nil {
+				return fmt.Errorf("constant at index %d, testIntegerObject failed: %s",
+					i, err)
+			}
+		}
+	}
+
 	return nil
+}
+
+func testIntegerObject(expected int64, actual object.Object) error {
+	actualInt, ok := actual.(*object.Integer)
+	if !ok {
+		return fmt.Errorf("object not of type integer, got %T (%+v)", actual, actual)
+	}
+
+	if actualInt.Value != expected {
+		return fmt.Errorf("incorrect integer value, expected %d, got %d", expected, actualInt.Value)
+	}
+
+	return nil
+}
+
+func concatInstructions(allInstructions []code.Instructions) code.Instructions {
+	out := code.Instructions{}
+
+	for _, instr := range allInstructions {
+		out = append(out, instr...)
+	}
+
+	return out
 }
 
 func parse(input string) *ast.Program {
