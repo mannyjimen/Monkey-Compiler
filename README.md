@@ -1,6 +1,6 @@
 # Monkey Compiler
 
-Monkey-Compiler is an implementation of the compiler for *Monkey Programming Language* by Thorsten Ball, with a bit of added features.
+Monkey-Compiler is an implementation of the compiler for the *Monkey Programming Language* by Thorsten Ball, with a bit of added features.
 
 *Monkey* supports all basic data types and constructs, with some personally fascinating additions:  
 - integer
