@@ -14,9 +14,6 @@ func (instr Instructions) String() string {
 	var out bytes.Buffer
 
 	for i := 0; i < len(instr); {
-		//curr instr address in instr
-
-		//get string representation of opcode
 		opByte := instr[i]
 		def, err := Lookup(opByte)
 		if err != nil {
