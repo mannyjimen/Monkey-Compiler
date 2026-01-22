@@ -59,17 +59,17 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 }
 
 func testInstructions(actual code.Instructions, expected []code.Instructions) error {
-	concatted := concatInstructions(expected)
+	flattened := concatInstructions(expected)
 
-	if len(actual) != len(concatted) {
+	if len(actual) != len(flattened) {
 		return fmt.Errorf("incorrect instruction length, \nexpected:%q\ngot:%q",
-			concatted, actual)
+			flattened, actual)
 	}
 
 	for i, instr := range actual {
-		if concatted[i] != instr {
+		if flattened[i] != instr {
 			return fmt.Errorf("wrong instruction at %d, \nexpected:%q\ngot:%q",
-				i, concatted, actual)
+				i, flattened, actual)
 		}
 	}
 
@@ -85,7 +85,7 @@ func testConstants(actual []object.Object, expected []any) error {
 	for i, constant := range expected {
 		switch constant := constant.(type) {
 		case int:
-			err := testIntegerObject(int64(constant), actual[i])
+			err := testIntegerObject(actual[i], int64(constant))
 			if err != nil {
 				return fmt.Errorf("constant at index %d, testIntegerObject failed: %s",
 					i, err)
@@ -96,7 +96,7 @@ func testConstants(actual []object.Object, expected []any) error {
 	return nil
 }
 
-func testIntegerObject(expected int64, actual object.Object) error {
+func testIntegerObject(actual object.Object, expected int64) error {
 	actualInt, ok := actual.(*object.Integer)
 	if !ok {
 		return fmt.Errorf("object not of type integer, got %T (%+v)", actual, actual)

@@ -1,6 +1,7 @@
 package code
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 )
@@ -8,6 +9,29 @@ import (
 //defining bytecode format
 
 type Instructions []byte
+
+func (instr Instructions) String() string {
+	var out bytes.Buffer
+
+	for i := 0; i < len(instr); {
+		//curr instr address in instr
+
+		//get string representation of opcode
+		opByte := instr[i]
+		def, err := Lookup(opByte)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %s\n", err)
+		}
+
+		operands, bytesRead := ReadOperands(def, instr[i+1:])
+
+		fmt.Fprintf(&out, "%04d %s\n", i, fmtInstructions(def, operands))
+
+		i += 1 + bytesRead
+	}
+	return out.String()
+}
+
 type Opcode byte
 
 const (
@@ -60,4 +84,38 @@ func Lookup(op byte) (*Definition, error) {
 		return nil, fmt.Errorf("opcode %d undefined", op)
 	}
 	return def, nil
+}
+
+// disassembles bytecode instruction operands
+func ReadOperands(def *Definition, instr Instructions) ([]int, int) {
+	operands := make([]int, len(def.OperandWidths))
+	offset := 0
+
+	for i, width := range def.OperandWidths {
+		switch width {
+		case 2:
+			operands[i] = int(ReadUint16(instr[offset:]))
+		}
+		offset += width
+	}
+
+	return operands, offset
+}
+
+func ReadUint16(b []byte) uint16 {
+	return binary.BigEndian.Uint16(b)
+}
+
+func fmtInstructions(def *Definition, operands []int) string {
+	if len(operands) != len(def.OperandWidths) {
+		return fmt.Sprintf("ERROR: operand len %d does not match defined len %d",
+			len(operands), len(def.OperandWidths))
+	}
+
+	switch len(operands) {
+	case 1:
+		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	}
+
+	return fmt.Sprintf("ERROR: operand len of %d not handled for %s", len(operands), def.Name)
 }
