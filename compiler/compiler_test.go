@@ -85,7 +85,7 @@ func testConstants(actual []object.Object, expected []any) error {
 	for i, constant := range expected {
 		switch constant := constant.(type) {
 		case int:
-			err := testIntegerObject(actual[i], int64(constant))
+			err := testIntegerObject(int64(constant), actual[i])
 			if err != nil {
 				return fmt.Errorf("constant at index %d, testIntegerObject failed: %s",
 					i, err)
@@ -96,7 +96,7 @@ func testConstants(actual []object.Object, expected []any) error {
 	return nil
 }
 
-func testIntegerObject(actual object.Object, expected int64) error {
+func testIntegerObject(expected int64, actual object.Object) error {
 	actualInt, ok := actual.(*object.Integer)
 	if !ok {
 		return fmt.Errorf("object not of type integer, got %T (%+v)", actual, actual)
