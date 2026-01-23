@@ -25,6 +25,7 @@ func TestIntegerArithmetic(t *testing.T) {
 			expectedInstructions: []code.Instructions{
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
 			},
 		},
 	}
@@ -62,7 +63,7 @@ func testInstructions(actual code.Instructions, expected []code.Instructions) er
 	flattened := concatInstructions(expected)
 
 	if len(actual) != len(flattened) {
-		return fmt.Errorf("incorrect instruction length, \nexpected:%q\ngot:%q",
+		return fmt.Errorf("incorrect instruction length, \nexpected:%q\ngot\t:%q",
 			flattened, actual)
 	}
 

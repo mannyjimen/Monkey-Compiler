@@ -43,7 +43,7 @@ func TestIngeterArithmetic(t *testing.T) {
 	tests := []vmTestCase{
 		{input: "1", expected: 1},
 		{input: "2", expected: 2},
-		{input: "1 + 2", expected: 2},
+		{input: "1 + 2", expected: 3},
 	}
 
 	runVmTests(t, tests)

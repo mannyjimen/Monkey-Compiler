@@ -33,6 +33,7 @@ type Opcode byte
 
 const (
 	OpConstant Opcode = iota
+	OpAdd
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -55,6 +56,8 @@ func Make(op Opcode, operands ...int) []byte {
 	for i, o := range operands {
 		width := def.OperandWidths[i]
 		switch width {
+		// case 0:
+		// 	return instruction
 		case 2:
 			binary.BigEndian.PutUint16(instruction[offset:], uint16(o))
 		}
@@ -73,6 +76,7 @@ type Definition struct {
 // opcode : {opcode string representation : byte width of operands for opcode}
 var definitions = map[Opcode]*Definition{
 	OpConstant: {"OpConstant", []int{2}},
+	OpAdd:      {"OpAdd", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {
@@ -110,6 +114,8 @@ func fmtInstructions(def *Definition, operands []int) string {
 	}
 
 	switch len(operands) {
+	case 0:
+		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
 	}

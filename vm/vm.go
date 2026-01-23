@@ -42,6 +42,30 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
+		case code.OpAdd:
+			right, err := vm.pop()
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
+
+			left, err := vm.pop()
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
+
+			leftInteger, leftValid := left.(*object.Integer)
+			rightInteger, rightValid := right.(*object.Integer)
+
+			if !leftValid || !rightValid {
+				return fmt.Errorf("runtime error: operand for 'add' is not Integer\n")
+			}
+
+			result := leftInteger.Value + rightInteger.Value
+			//can neglect err here since impossible to stack overflow
+			err = vm.push(&object.Integer{Value: result})
+			if err != nil {
+				return fmt.Errorf("runtime error: %s", err)
+			}
 		}
 	}
 
@@ -57,6 +81,17 @@ func (vm *VM) push(obj object.Object) error {
 	vm.sp++
 
 	return nil
+}
+
+// note, remove conditional if speed is prioritized
+func (vm *VM) pop() (object.Object, error) {
+	if vm.sp <= 0 {
+		return nil, fmt.Errorf("stack underflow")
+	}
+
+	obj := vm.stack[vm.sp-1]
+	vm.sp--
+	return obj, nil
 }
 
 func (vm *VM) StackTop() object.Object {
