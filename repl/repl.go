@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/mannyjimen/Monkey-Compiler/compiler"
 	"github.com/mannyjimen/Monkey-Compiler/lexer"
 	"github.com/mannyjimen/Monkey-Compiler/parser"
+	"github.com/mannyjimen/Monkey-Compiler/vm"
 )
 
 const PROMPT = ">> "
@@ -33,7 +35,21 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
+		c := compiler.New()
+		err := c.Compile(program)
+		if err != nil {
+			fmt.Fprintf(out, "compilation failed:\n%s\n", err)
+			continue
+		}
+
+		vm := vm.New(c.Bytecode())
+		err = vm.Run()
+		if err != nil {
+			fmt.Fprintf(out, "executing bytecode failed:\n%s\n", err)
+			continue
+		}
+
+		io.WriteString(out, vm.StackTop().Inspect())
 		io.WriteString(out, "\n")
 	}
 }
