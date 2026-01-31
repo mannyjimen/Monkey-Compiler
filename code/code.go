@@ -35,6 +35,9 @@ const (
 	OpConstant Opcode = iota
 	OpAdd
 	OpPop
+	OpMin
+	OpMul
+	OpDiv
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -79,6 +82,9 @@ var definitions = map[Opcode]*Definition{
 	OpConstant: {"OpConstant", []int{2}},
 	OpAdd:      {"OpAdd", []int{}},
 	OpPop:      {"OpPop", []int{}},
+	OpMin:      {"OpMin", []int{}},
+	OpMul:      {"OpMul", []int{}},
+	OpDiv:      {"OpDiv", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {
