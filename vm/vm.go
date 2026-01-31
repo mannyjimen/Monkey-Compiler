@@ -64,7 +64,12 @@ func (vm *VM) Run() error {
 			//can neglect err here since impossible to stack overflow
 			err = vm.push(&object.Integer{Value: result})
 			if err != nil {
-				return fmt.Errorf("runtime error: %s", err)
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
+		case code.OpPop:
+			_, err := vm.pop()
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
 			}
 		}
 	}
@@ -91,6 +96,7 @@ func (vm *VM) pop() (object.Object, error) {
 
 	obj := vm.stack[vm.sp-1]
 	vm.sp--
+
 	return obj, nil
 }
 
@@ -99,4 +105,9 @@ func (vm *VM) StackTop() object.Object {
 		return nil
 	}
 	return vm.stack[vm.sp-1]
+}
+
+// test only method
+func (vm *VM) LastPoppedObject() object.Object {
+	return vm.stack[vm.sp]
 }

@@ -26,6 +26,17 @@ func TestIntegerArithmetic(t *testing.T) {
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpConstant, 1),
 				code.Make(code.OpAdd),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "3; 4;",
+			expectedConstants: []any{3, 4},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpPop),
 			},
 		},
 	}
@@ -69,7 +80,7 @@ func testInstructions(actual code.Instructions, expected []code.Instructions) er
 
 	for i, instr := range actual {
 		if flattened[i] != instr {
-			return fmt.Errorf("wrong instruction at %d, \nexpected:%q\ngot:%q",
+			return fmt.Errorf("wrong instruction at %d, \nexpected:\t%q\ngot:\t\t%q",
 				i, flattened, actual)
 		}
 	}

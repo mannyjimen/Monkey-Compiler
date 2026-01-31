@@ -49,7 +49,9 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, vm.StackTop().Inspect())
+		lastPopped := vm.LastPoppedObject()
+
+		io.WriteString(out, lastPopped.Inspect())
 		io.WriteString(out, "\n")
 	}
 }
