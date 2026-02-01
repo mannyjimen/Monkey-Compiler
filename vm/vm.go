@@ -42,30 +42,13 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
-		case code.OpAdd:
-			right, err := vm.pop()
+		case code.OpAdd, code.OpMin, code.OpMul, code.OpDiv:
+
+			err := vm.executeInfixOperation(op)
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
 
-			left, err := vm.pop()
-			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
-			}
-
-			leftInteger, leftValid := left.(*object.Integer)
-			rightInteger, rightValid := right.(*object.Integer)
-
-			if !leftValid || !rightValid {
-				return fmt.Errorf("runtime error: operand for 'add' is not Integer\n")
-			}
-
-			result := leftInteger.Value + rightInteger.Value
-			//can neglect err here since impossible to stack overflow
-			err = vm.push(&object.Integer{Value: result})
-			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
-			}
 		case code.OpPop:
 			_, err := vm.pop()
 			if err != nil {
@@ -75,6 +58,42 @@ func (vm *VM) Run() error {
 	}
 
 	return nil
+}
+
+func (vm *VM) executeInfixOperation(operator code.Opcode) error {
+	right, err := vm.pop()
+	if err != nil {
+		return err
+	}
+
+	left, err := vm.pop()
+	if err != nil {
+		return err
+	}
+
+	leftInteger, leftValid := left.(*object.Integer)
+	rightInteger, rightValid := right.(*object.Integer)
+
+	if !leftValid || !rightValid {
+		return fmt.Errorf("left or right operand for infix operation is not Integer\n")
+	}
+
+	var result int64
+
+	switch operator {
+	case code.OpAdd:
+		result = leftInteger.Value + rightInteger.Value
+	case code.OpMin:
+		result = leftInteger.Value - rightInteger.Value
+	case code.OpMul:
+		result = leftInteger.Value * rightInteger.Value
+	case code.OpDiv:
+		result = leftInteger.Value / rightInteger.Value
+	default:
+		return fmt.Errorf("unknown infix operator: %d", operator)
+	}
+
+	return vm.push(&object.Integer{Value: result})
 }
 
 func (vm *VM) push(obj object.Object) error {

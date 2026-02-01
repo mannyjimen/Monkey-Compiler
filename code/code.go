@@ -77,7 +77,7 @@ type Definition struct {
 	OperandWidths []int
 }
 
-// opcode : {opcode string representation : byte width of operands for opcode}
+// opcode : {string representation, byte widths of operands expected after opcode}
 var definitions = map[Opcode]*Definition{
 	OpConstant: {"OpConstant", []int{2}},
 	OpAdd:      {"OpAdd", []int{}},
