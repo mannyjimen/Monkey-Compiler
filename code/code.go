@@ -38,6 +38,8 @@ const (
 	OpMin
 	OpMul
 	OpDiv
+	OpTrue
+	OpFalse
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -85,6 +87,8 @@ var definitions = map[Opcode]*Definition{
 	OpMin:      {"OpMin", []int{}},
 	OpMul:      {"OpMul", []int{}},
 	OpDiv:      {"OpDiv", []int{}},
+	OpTrue:     {"OpTrue", []int{}},
+	OpFalse:    {"OpFalse", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {

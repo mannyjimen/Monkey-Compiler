@@ -25,13 +25,13 @@ func runVmTests(t *testing.T, tests []vmTestCase) {
 		c := compiler.New()
 		err := c.Compile(program)
 		if err != nil {
-			t.Fatalf("compiler error: %s", err)
+			t.Fatalf("%s", err)
 		}
 
 		vm := New(c.Bytecode())
 		err = vm.Run()
 		if err != nil {
-			t.Fatalf("runtime error: %s", err)
+			t.Fatalf("%s", err)
 		}
 		stackElem := vm.LastPoppedObject()
 		testExpectedObject(t, tt.expected, stackElem)
@@ -53,6 +53,15 @@ func TestIngeterArithmetic(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestBooleanInstructions(t *testing.T) {
+	tests := []vmTestCase{
+		{input: "true", expected: true},
+		{input: "false;", expected: false},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 
@@ -62,17 +71,35 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 		if err != nil {
 			t.Errorf("testExpectedObject failed: %s", err)
 		}
+	case bool:
+		err := testBooleanObject(expected, actual)
+		if err != nil {
+			t.Errorf("testBooleanObject failed: %s", err)
+		}
 	}
 }
 
 func testIntegerObject(expected int64, actual object.Object) error {
 	actualInt, ok := actual.(*object.Integer)
 	if !ok {
-		return fmt.Errorf("object not of type integer, got %T (%+v)", actual, actual)
+		return fmt.Errorf("object not of type Integer, got %T (%+v)", actual, actual)
 	}
 
 	if actualInt.Value != expected {
 		return fmt.Errorf("incorrect integer value, expected %d, got %d", expected, actualInt.Value)
+	}
+
+	return nil
+}
+
+func testBooleanObject(expected bool, actual object.Object) error {
+	actualBool, ok := actual.(*object.Boolean)
+	if !ok {
+		return fmt.Errorf("object not of type Boolean, got %T (%+v)", actual, actual)
+	}
+
+	if actualBool.Value != expected {
+		return fmt.Errorf("incorrect boolean value, expected %t, got %t", expected, actualBool.Value)
 	}
 
 	return nil
