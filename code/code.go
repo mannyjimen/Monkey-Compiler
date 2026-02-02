@@ -40,6 +40,9 @@ const (
 	OpDiv
 	OpTrue
 	OpFalse
+	OpEqual
+	OpNotEqual
+	OpGreaterThan
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -81,14 +84,17 @@ type Definition struct {
 
 // opcode : {string representation, byte widths of operands expected after opcode}
 var definitions = map[Opcode]*Definition{
-	OpConstant: {"OpConstant", []int{2}},
-	OpAdd:      {"OpAdd", []int{}},
-	OpPop:      {"OpPop", []int{}},
-	OpMin:      {"OpMin", []int{}},
-	OpMul:      {"OpMul", []int{}},
-	OpDiv:      {"OpDiv", []int{}},
-	OpTrue:     {"OpTrue", []int{}},
-	OpFalse:    {"OpFalse", []int{}},
+	OpConstant:    {"OpConstant", []int{2}},
+	OpAdd:         {"OpAdd", []int{}},
+	OpPop:         {"OpPop", []int{}},
+	OpMin:         {"OpMin", []int{}},
+	OpMul:         {"OpMul", []int{}},
+	OpDiv:         {"OpDiv", []int{}},
+	OpTrue:        {"OpTrue", []int{}},
+	OpFalse:       {"OpFalse", []int{}},
+	OpEqual:       {"OpEqual", []int{}},
+	OpNotEqual:    {"OpNotEqual", []int{}},
+	OpGreaterThan: {"OpGreaterThan", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {

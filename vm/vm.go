@@ -52,6 +52,12 @@ func (vm *VM) Run() error {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
 
+		case code.OpEqual, code.OpNotEqual, code.OpGreaterThan:
+			err := vm.executeComparisonOperation(op)
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
+
 		case code.OpTrue:
 			err := vm.push(True)
 			if err != nil {
@@ -110,6 +116,56 @@ func (vm *VM) executeInfixOperation(operator code.Opcode) error {
 	return vm.push(&object.Integer{Value: result})
 }
 
+func (vm *VM) executeComparisonOperation(operator code.Opcode) error {
+	right, err := vm.pop()
+	if err != nil {
+		return err
+	}
+
+	left, err := vm.pop()
+	if err != nil {
+		return err
+	}
+
+	if left.Type() == object.INTEGER_OBJ || right.Type() == object.INTEGER_OBJ {
+		return vm.executeIntegerComparison(operator, left, right)
+	}
+
+	//we now know both left and right are our boolean objects (True and False)
+
+	switch operator {
+	case code.OpEqual:
+		return vm.push(nativeBooleanToBooleanObject(left == right))
+	case code.OpNotEqual:
+		return vm.push(nativeBooleanToBooleanObject(left != right))
+	default:
+		return fmt.Errorf("unknown operator type: %T, operand types: (%s, %s)",
+			operator, left.Type(), right.Type())
+	}
+}
+
+func (vm *VM) executeIntegerComparison(operator code.Opcode, left, right object.Object) error {
+	leftInteger, leftValid := left.(*object.Integer)
+	rightInteger, rightValid := right.(*object.Integer)
+
+	if !leftValid || !rightValid {
+		return fmt.Errorf("unexpected type for integer comparison, left type: %s, right type: %s",
+			left.Type(), right.Type())
+	}
+
+	switch operator {
+	case code.OpEqual:
+		return vm.push(nativeBooleanToBooleanObject(leftInteger.Value == rightInteger.Value))
+	case code.OpNotEqual:
+		return vm.push(nativeBooleanToBooleanObject(leftInteger.Value != rightInteger.Value))
+	case code.OpGreaterThan:
+		return vm.push(nativeBooleanToBooleanObject(leftInteger.Value > rightInteger.Value))
+	default:
+		return fmt.Errorf("unknown operator type: %T, operand types: (%s, %s)",
+			operator, left.Type(), right.Type())
+	}
+}
+
 func (vm *VM) push(obj object.Object) error {
 	if vm.sp >= StackSize {
 		return fmt.Errorf("stack overflow")
@@ -143,4 +199,11 @@ func (vm *VM) StackTop() object.Object {
 // test only method
 func (vm *VM) LastPoppedObject() object.Object {
 	return vm.stack[vm.sp]
+}
+
+func nativeBooleanToBooleanObject(b bool) *object.Boolean {
+	if b {
+		return True
+	}
+	return False
 }

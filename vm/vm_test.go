@@ -57,6 +57,14 @@ func TestBooleanInstructions(t *testing.T) {
 	tests := []vmTestCase{
 		{input: "true", expected: true},
 		{input: "false;", expected: false},
+		{input: "1 > 2", expected: false},
+		{input: "1 < 2", expected: true},
+		{input: "1 == 2", expected: false},
+		{input: "1 != 2", expected: true},
+		{input: "true == false", expected: false},
+		{input: "true == true", expected: true},
+		{input: "(true != true)", expected: false},
+		{input: "(false == false)", expected: true},
 	}
 
 	runVmTests(t, tests)
