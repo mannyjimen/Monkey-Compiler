@@ -43,6 +43,8 @@ const (
 	OpEqual
 	OpNotEqual
 	OpGreaterThan
+	OpBang
+	OpMinus
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -95,6 +97,8 @@ var definitions = map[Opcode]*Definition{
 	OpEqual:       {"OpEqual", []int{}},
 	OpNotEqual:    {"OpNotEqual", []int{}},
 	OpGreaterThan: {"OpGreaterThan", []int{}},
+	OpBang:        {"OpBang", []int{}},
+	OpMinus:       {"OpMinus", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {

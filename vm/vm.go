@@ -53,7 +53,13 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpEqual, code.OpNotEqual, code.OpGreaterThan:
-			err := vm.executeComparisonOperation(op)
+			err := vm.executeComparison(op)
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
+
+		case code.OpBang, code.OpMinus:
+			err := vm.executePrefix(op)
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
@@ -116,7 +122,7 @@ func (vm *VM) executeInfixOperation(operator code.Opcode) error {
 	return vm.push(&object.Integer{Value: result})
 }
 
-func (vm *VM) executeComparisonOperation(operator code.Opcode) error {
+func (vm *VM) executeComparison(operator code.Opcode) error {
 	right, err := vm.pop()
 	if err != nil {
 		return err
@@ -141,6 +147,31 @@ func (vm *VM) executeComparisonOperation(operator code.Opcode) error {
 	default:
 		return fmt.Errorf("unknown operator type: %T, operand types: (%s, %s)",
 			operator, left.Type(), right.Type())
+	}
+}
+
+func (vm *VM) executePrefix(operator code.Opcode) error {
+	value, err := vm.pop()
+	if err != nil {
+		return err
+	}
+
+	switch operator {
+	case code.OpBang:
+		b, ok := value.(*object.Boolean)
+		if !ok {
+			return fmt.Errorf("'!' operator not followed by BOOLEAN, followed by %s", value.Type())
+		}
+		return vm.push(nativeBooleanToBooleanObject(!b.Value))
+	case code.OpMinus:
+		i, ok := value.(*object.Integer)
+		if !ok {
+			return fmt.Errorf("'-' prefix operator not followed by INTEGER, followed by %s", value.Type())
+		}
+		return vm.push(&object.Integer{Value: -i.Value})
+
+	default:
+		return fmt.Errorf("unknown prefix operator: %T", operator)
 	}
 }
 

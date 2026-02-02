@@ -131,6 +131,29 @@ func TestBooleanExpressions(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestPrefixExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{input: "!true",
+			expectedConstants: []any{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpBang),
+				code.Make(code.OpPop),
+			},
+		},
+		{input: "-5",
+			expectedConstants: []any{5},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpMinus),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 

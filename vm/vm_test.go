@@ -48,6 +48,8 @@ func TestIngeterArithmetic(t *testing.T) {
 		{input: "2 / 1", expected: 2},
 		{input: "50 + 6 - 4 * 3 * 2 - 2 / 2", expected: 31},
 		{input: "9 * (4 - 2)", expected: 18},
+		{input: "-1", expected: -1},
+		{input: "-(9 * (4 - 2))", expected: -18},
 	}
 
 	runVmTests(t, tests)
@@ -65,6 +67,9 @@ func TestBooleanInstructions(t *testing.T) {
 		{input: "true == true", expected: true},
 		{input: "(true != true)", expected: false},
 		{input: "(false == false)", expected: true},
+		{input: "!true", expected: false},
+		{input: "!(!(true))", expected: true},
+		{input: "!!!false", expected: true},
 	}
 
 	runVmTests(t, tests)
