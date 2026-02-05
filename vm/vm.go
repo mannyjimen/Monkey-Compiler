@@ -45,7 +45,7 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
-		case code.OpAdd, code.OpMin, code.OpMul, code.OpDiv:
+		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
 
 			err := vm.executeInfixOperation(op)
 			if err != nil {
@@ -109,7 +109,7 @@ func (vm *VM) executeInfixOperation(operator code.Opcode) error {
 	switch operator {
 	case code.OpAdd:
 		result = leftInteger.Value + rightInteger.Value
-	case code.OpMin:
+	case code.OpSub:
 		result = leftInteger.Value - rightInteger.Value
 	case code.OpMul:
 		result = leftInteger.Value * rightInteger.Value

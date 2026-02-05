@@ -8,15 +8,26 @@ import (
 	"github.com/mannyjimen/Monkey-Compiler/object"
 )
 
+type EmittedInstruction struct {
+	Position int
+	Opcode   code.Opcode
+}
+
 type Compiler struct {
 	instructions code.Instructions
 	constants    []object.Object
+
+	lastInstruction EmittedInstruction
+	prevInstruction EmittedInstruction
 }
 
 func New() *Compiler {
 	return &Compiler{
 		instructions: code.Instructions{},
 		constants:    []object.Object{},
+
+		lastInstruction: EmittedInstruction{},
+		prevInstruction: EmittedInstruction{},
 	}
 }
 
@@ -34,7 +45,16 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
+
 		c.emit(code.OpPop)
+
+	case *ast.BlockStatement:
+		for _, stmt := range node.Statements {
+			err := c.Compile(stmt)
+			if err != nil {
+				return err
+			}
+		}
 	case *ast.PrefixExpression:
 		err := c.Compile(node.Right)
 		if err != nil {
@@ -80,7 +100,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		case "+":
 			c.emit(code.OpAdd)
 		case "-":
-			c.emit(code.OpMin)
+			c.emit(code.OpSub)
 		case "*":
 			c.emit(code.OpMul)
 		case "/":
@@ -94,6 +114,26 @@ func (c *Compiler) Compile(node ast.Node) error {
 		default:
 			return fmt.Errorf("unknown operator %s", node.Operator)
 		}
+	case *ast.IfExpression:
+		err := c.Compile(node.Condition)
+		if err != nil {
+			return err
+		}
+		// emitting with temporary garbage value
+		jumpNotTruthyPos := c.emit(code.OpJumpNotTruthy, 9999)
+
+		err = c.Compile(node.Consequence)
+		if err != nil {
+			return err
+		}
+
+		if c.lastInstructionIsPop() {
+			c.removeLastInstruction()
+		}
+
+		postConsequencePos := len(c.instructions)
+		c.changeOperand(jumpNotTruthyPos, postConsequencePos)
+
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}
 		c.emit(code.OpConstant, c.addConstant(integer))
@@ -126,6 +166,9 @@ type Bytecode struct {
 func (c *Compiler) emit(op code.Opcode, operands ...int) int {
 	instr := code.Make(op, operands...)
 	pos := c.addInstruction(instr)
+
+	c.setLastInstruction(op, pos)
+
 	return pos
 }
 
@@ -140,4 +183,33 @@ func (c *Compiler) addInstruction(instr code.Instructions) int {
 func (c *Compiler) addConstant(constant object.Object) int {
 	c.constants = append(c.constants, constant)
 	return len(c.constants) - 1
+}
+
+func (c *Compiler) lastInstructionIsPop() bool {
+	return c.lastInstruction.Opcode == code.OpPop
+}
+
+func (c *Compiler) removeLastInstruction() {
+	c.instructions = c.instructions[:c.lastInstruction.Position]
+	c.lastInstruction = c.prevInstruction
+}
+
+func (c *Compiler) setLastInstruction(op code.Opcode, pos int) {
+	c.prevInstruction = c.lastInstruction
+	c.lastInstruction = EmittedInstruction{Position: pos, Opcode: op}
+}
+
+// example of NON type safe function. can possibly corrupt bytecode
+// by replacing different length instructions
+func (c *Compiler) replaceInstruction(pos int, newInstruction []byte) {
+	for i := range len(newInstruction) {
+		c.instructions[pos+i] = newInstruction[i]
+	}
+}
+
+func (c *Compiler) changeOperand(opPos int, operand int) {
+	op := code.Opcode(c.instructions[opPos])
+	newInstruction := code.Make(op, operand)
+
+	c.replaceInstruction(opPos, newInstruction)
 }

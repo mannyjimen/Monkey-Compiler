@@ -35,7 +35,7 @@ const (
 	OpConstant Opcode = iota
 	OpAdd
 	OpPop
-	OpMin
+	OpSub
 	OpMul
 	OpDiv
 	OpTrue
@@ -45,6 +45,8 @@ const (
 	OpGreaterThan
 	OpBang
 	OpMinus
+	OpJump
+	OpJumpNotTruthy
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -86,19 +88,21 @@ type Definition struct {
 
 // opcode : {string representation, byte widths of operands expected after opcode}
 var definitions = map[Opcode]*Definition{
-	OpConstant:    {"OpConstant", []int{2}},
-	OpAdd:         {"OpAdd", []int{}},
-	OpPop:         {"OpPop", []int{}},
-	OpMin:         {"OpMin", []int{}},
-	OpMul:         {"OpMul", []int{}},
-	OpDiv:         {"OpDiv", []int{}},
-	OpTrue:        {"OpTrue", []int{}},
-	OpFalse:       {"OpFalse", []int{}},
-	OpEqual:       {"OpEqual", []int{}},
-	OpNotEqual:    {"OpNotEqual", []int{}},
-	OpGreaterThan: {"OpGreaterThan", []int{}},
-	OpBang:        {"OpBang", []int{}},
-	OpMinus:       {"OpMinus", []int{}},
+	OpConstant:      {"OpConstant", []int{2}},
+	OpAdd:           {"OpAdd", []int{}},
+	OpPop:           {"OpPop", []int{}},
+	OpSub:           {"OpSub", []int{}},
+	OpMul:           {"OpMul", []int{}},
+	OpDiv:           {"OpDiv", []int{}},
+	OpTrue:          {"OpTrue", []int{}},
+	OpFalse:         {"OpFalse", []int{}},
+	OpEqual:         {"OpEqual", []int{}},
+	OpNotEqual:      {"OpNotEqual", []int{}},
+	OpGreaterThan:   {"OpGreaterThan", []int{}},
+	OpBang:          {"OpBang", []int{}},
+	OpMinus:         {"OpMinus", []int{}},
+	OpJump:          {"OpJump", []int{2}},
+	OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
 }
 
 func Lookup(op byte) (*Definition, error) {
