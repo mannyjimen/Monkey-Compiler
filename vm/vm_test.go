@@ -75,6 +75,20 @@ func TestBooleanInstructions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestIfExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{input: "if (true) { 1 }", expected: 1},
+		{input: "if (false) { 1 } else { 2 }", expected: 2},
+		{input: "if (true) { 1 } else { 2 }", expected: 1},
+		{input: "if (1 < 2) { 5 } else { 3 }", expected: 5},
+		{input: "if (1 > 2) { 5 } else { 3 }", expected: 3},
+		{input: "if (1) { 2 }", expected: 2},
+		{input: "if (false) { 2 }", expected: Null},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 

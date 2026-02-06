@@ -12,6 +12,7 @@ const StackSize = 2048
 
 var True = &object.Boolean{Value: true}
 var False = &object.Boolean{Value: false}
+var Null = &object.Null{}
 
 type VM struct {
 	constants    []object.Object
@@ -73,6 +74,23 @@ func (vm *VM) Run() error {
 			err := vm.push(False)
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
+			}
+
+		case code.OpJump:
+			jumpIndex := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip = jumpIndex - 1
+
+		case code.OpJumpNotTruthy:
+			jumpIndex := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+
+			condition, err := vm.pop()
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
+
+			if !isTruthy(condition) {
+				ip = jumpIndex - 1
 			}
 
 		case code.OpPop:
@@ -211,6 +229,7 @@ func (vm *VM) push(obj object.Object) error {
 // note, remove conditional if speed is prioritized
 func (vm *VM) pop() (object.Object, error) {
 	if vm.sp <= 0 {
+		// return Null, nil
 		return nil, fmt.Errorf("stack underflow")
 	}
 
@@ -237,4 +256,13 @@ func nativeBooleanToBooleanObject(b bool) *object.Boolean {
 		return True
 	}
 	return False
+}
+
+func isTruthy(obj object.Object) bool {
+	switch obj := obj.(type) {
+	case *object.Boolean:
+		return obj.Value
+	default:
+		return true
+	}
 }
