@@ -131,8 +131,30 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.removeLastInstruction()
 		}
 
-		postConsequencePos := len(c.instructions)
-		c.changeOperand(jumpNotTruthyPos, postConsequencePos)
+		if node.Alternative == nil {
+			postConsequencePos := len(c.instructions)
+			c.changeOperand(jumpNotTruthyPos, postConsequencePos)
+		} else {
+
+			//emitting with temp garbage value
+			jumpTruthyPos := c.emit(code.OpJump, 9999)
+
+			//modifying jumpNotTruthy
+			postConsequencePos := len(c.instructions)
+			c.changeOperand(jumpNotTruthyPos, postConsequencePos)
+
+			err = c.Compile(node.Alternative)
+			if err != nil {
+				return err
+			}
+
+			if c.lastInstructionIsPop() {
+				c.removeLastInstruction()
+			}
+
+			postAlternativePos := len(c.instructions)
+			c.changeOperand(jumpTruthyPos, postAlternativePos)
+		}
 
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}

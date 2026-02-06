@@ -192,30 +192,59 @@ func TestConditionals(t *testing.T) {
 				code.Make(code.OpPop),
 			},
 		},
-		// {
-		// 	input:             "if (5 > 3) { 0 } else { 1 }",
-		// 	expectedConstants: []any{5, 3, 0, 1},
-		// 	expectedInstructions: []code.Instructions{
-		// 		// 0000
-		// 		code.Make(code.OpConstant, 0),
-		// 		// 0003
-		// 		code.Make(code.OpConstant, 1),
-		// 		// 0006
-		// 		code.Make(code.OpJumpNotTruthy, 13),
-		// 		// 0009
-		// 		code.Make(code.OpConstant, 2),
-		// 		// 000(12)
-		// 		code.Make(code.OpPop),
-		// 		// 000(13)
-		// 		code.Make(code.OpJump, 19),
-		// 		// 000(16)
-		// 		code.Make(code.OpConstant, 3),
-		// 		// 000(19)
-		// 		code.Make(code.OpPop),
-		// 		// 000(20)
-		// 		code.Make(code.OpPop),
-		// 	},
-		// },
+		{
+			input:             "if (true) { 0 } else { 1 }",
+			expectedConstants: []any{0, 1},
+			expectedInstructions: []code.Instructions{
+				//0000
+				code.Make(code.OpTrue),
+				//0001
+				code.Make(code.OpJumpNotTruthy, 10),
+				//0004
+				code.Make(code.OpConstant, 0),
+				//0007
+				code.Make(code.OpJump, 13),
+				//000(10)
+				code.Make(code.OpConstant, 1),
+				//000(13)
+				code.Make(code.OpPop),
+			},
+		},
+
+		{
+			input:             "if (true) { 0;1;2; } else { 3;4;5 }",
+			expectedConstants: []any{0, 1, 2, 3, 4, 5},
+			expectedInstructions: []code.Instructions{
+				//0000
+				code.Make(code.OpTrue),
+				//0001
+				code.Make(code.OpJumpNotTruthy, 18),
+				//0004
+				code.Make(code.OpConstant, 0),
+				//0007
+				code.Make(code.OpPop),
+				//0008
+				code.Make(code.OpConstant, 1),
+				//000(11)
+				code.Make(code.OpPop),
+				//000(12)
+				code.Make(code.OpConstant, 2),
+				//000(15)
+				code.Make(code.OpJump, 29),
+				//000(18)
+				code.Make(code.OpConstant, 3),
+				//000(21)
+				code.Make(code.OpPop),
+				//000(22)
+				code.Make(code.OpConstant, 4),
+				//000(25)
+				code.Make(code.OpPop),
+				//000(26)
+				code.Make(code.OpConstant, 5),
+				//000(29)
+				code.Make(code.OpPop),
+			},
+		},
 	}
 
 	runCompilerTests(t, tests)
