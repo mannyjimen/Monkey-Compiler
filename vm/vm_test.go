@@ -70,6 +70,7 @@ func TestBooleanInstructions(t *testing.T) {
 		{input: "!true", expected: false},
 		{input: "!(!(true))", expected: true},
 		{input: "!!!false", expected: true},
+		{input: "!(if (false) { 1; })", expected: true},
 	}
 
 	runVmTests(t, tests)
@@ -84,6 +85,9 @@ func TestIfExpressions(t *testing.T) {
 		{input: "if (1 > 2) { 5 } else { 3 }", expected: 3},
 		{input: "if (1) { 2 }", expected: 2},
 		{input: "if (false) { 2 }", expected: Null},
+		{input: "if (1 == 2) { 1 };", expected: Null},
+		{input: "!(if (if (1 < 2) { false } else { true }) { 5 })", expected: true},
+		{input: "if (if (2 < 1) { true }) { 5 } else { 4 }", expected: 4},
 	}
 
 	runVmTests(t, tests)
@@ -101,7 +105,11 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	case bool:
 		err := testBooleanObject(expected, actual)
 		if err != nil {
-			t.Errorf("testBooleanObject failed: %s", err)
+			t.Errorf("testExpectedObject failed: %s", err)
+		}
+	case *object.Null:
+		if actual != Null {
+			t.Errorf("testExpecedObject failed: object not of type Null, got %T (%+v)", actual, actual)
 		}
 	}
 }

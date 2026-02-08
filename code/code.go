@@ -47,6 +47,7 @@ const (
 	OpMinus
 	OpJump
 	OpJumpNotTruthy
+	OpNull
 )
 
 // constructing bytecode instruction, op code and operand constant pool addresses
@@ -103,6 +104,7 @@ var definitions = map[Opcode]*Definition{
 	OpMinus:         {"OpMinus", []int{}},
 	OpJump:          {"OpJump", []int{2}},
 	OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
+	OpNull:          {"OpNull", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {

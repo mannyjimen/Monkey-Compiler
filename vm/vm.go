@@ -98,6 +98,11 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return fmt.Errorf("runtime error: %s\n", err)
 			}
+		case code.OpNull:
+			err := vm.push(Null)
+			if err != nil {
+				return fmt.Errorf("runtime error: %s\n", err)
+			}
 		}
 	}
 
@@ -176,11 +181,14 @@ func (vm *VM) executePrefix(operator code.Opcode) error {
 
 	switch operator {
 	case code.OpBang:
-		b, ok := value.(*object.Boolean)
-		if !ok {
-			return fmt.Errorf("'!' operator not followed by BOOLEAN, followed by %s", value.Type())
+		switch value := value.(type) {
+		case *object.Null:
+			return vm.push(True)
+		case *object.Boolean:
+			return vm.push(nativeBooleanToBooleanObject(!value.Value))
+		default:
+			return fmt.Errorf("unexpected type after '!' operator, type %s", value.Type())
 		}
-		return vm.push(nativeBooleanToBooleanObject(!b.Value))
 	case code.OpMinus:
 		i, ok := value.(*object.Integer)
 		if !ok {
@@ -262,6 +270,8 @@ func isTruthy(obj object.Object) bool {
 	switch obj := obj.(type) {
 	case *object.Boolean:
 		return obj.Value
+	case *object.Null:
+		return false
 	default:
 		return true
 	}
