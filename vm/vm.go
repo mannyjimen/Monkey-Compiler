@@ -181,14 +181,8 @@ func (vm *VM) executePrefix(operator code.Opcode) error {
 
 	switch operator {
 	case code.OpBang:
-		switch value := value.(type) {
-		case *object.Null:
-			return vm.push(True)
-		case *object.Boolean:
-			return vm.push(nativeBooleanToBooleanObject(!value.Value))
-		default:
-			return fmt.Errorf("unexpected type after '!' operator, type %s", value.Type())
-		}
+		return vm.executeBangOperator(value)
+
 	case code.OpMinus:
 		i, ok := value.(*object.Integer)
 		if !ok {
@@ -198,6 +192,17 @@ func (vm *VM) executePrefix(operator code.Opcode) error {
 
 	default:
 		return fmt.Errorf("unknown prefix operator: %T", operator)
+	}
+}
+
+func (vm *VM) executeBangOperator(value object.Object) error {
+	switch value := value.(type) {
+	case *object.Null:
+		return vm.push(True)
+	case *object.Boolean:
+		return vm.push(nativeBooleanToBooleanObject(!value.Value))
+	default:
+		return fmt.Errorf("unexpected type after '!' operator, type %s", value.Type())
 	}
 }
 
@@ -272,6 +277,12 @@ func isTruthy(obj object.Object) bool {
 		return obj.Value
 	case *object.Null:
 		return false
+	//0 is not truthy to me!
+	case *object.Integer:
+		if obj.Value == 0 {
+			return false
+		}
+		return true
 	default:
 		return true
 	}

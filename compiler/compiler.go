@@ -40,6 +40,15 @@ func (c *Compiler) Compile(node ast.Node) error {
 				return err
 			}
 		}
+	case *ast.LetStatement:
+		//compiling expression (right side of equal sign)
+		err := c.Compile(node.Value)
+		if err != nil {
+			return err
+		}
+
+		//what now?
+
 	case *ast.ExpressionStatement:
 		err := c.Compile(node.Expression)
 		if err != nil {

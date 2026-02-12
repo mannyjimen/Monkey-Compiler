@@ -88,6 +88,7 @@ func TestIfExpressions(t *testing.T) {
 		{input: "if (1 == 2) { 1 };", expected: Null},
 		{input: "!(if (if (1 < 2) { false } else { true }) { 5 })", expected: true},
 		{input: "if (if (2 < 1) { true }) { 5 } else { 4 }", expected: 4},
+		{input: "if (0) { true } else { false }", expected: false},
 	}
 
 	runVmTests(t, tests)

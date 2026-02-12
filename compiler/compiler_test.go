@@ -258,6 +258,55 @@ func TestConditionals(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestGlobalLetStatements(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input:             "let x = 5;",
+			expectedConstants: []any{5},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				//x is 0
+				code.Make(code.OpSetGlobal, 0),
+			},
+		},
+		{
+			input: `
+			let first = 5;
+			let second = first;`,
+			expectedConstants: []any{5},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				//first is 0
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpGetGlobal, 0),
+				//second is 1
+				code.Make(code.OpSetGlobal, 1),
+			},
+		},
+		{
+			input: `
+			let x = true;
+			let y = x;
+			x; y;`,
+			expectedConstants: []any{true},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				//x is 0
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpGetGlobal, 0),
+				//y is 1
+				code.Make(code.OpSetGlobal, 1),
+				code.Make(code.OpGetGlobal, 0),
+				code.Make(code.OpPop),
+				code.Make(code.OpGetGlobal, 1),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 
