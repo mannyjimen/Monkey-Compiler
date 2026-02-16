@@ -288,9 +288,9 @@ func TestGlobalLetStatements(t *testing.T) {
 			let x = true;
 			let y = x;
 			x; y;`,
-			expectedConstants: []any{true},
+			expectedConstants: []any{},
 			expectedInstructions: []code.Instructions{
-				code.Make(code.OpConstant, 0),
+				code.Make(code.OpTrue),
 				//x is 0
 				code.Make(code.OpSetGlobal, 0),
 				code.Make(code.OpGetGlobal, 0),

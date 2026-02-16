@@ -16,6 +16,7 @@ type EmittedInstruction struct {
 type Compiler struct {
 	instructions code.Instructions
 	constants    []object.Object
+	symbolTable  *SymbolTable
 
 	lastInstruction EmittedInstruction
 	prevInstruction EmittedInstruction
@@ -25,6 +26,7 @@ func New() *Compiler {
 	return &Compiler{
 		instructions: code.Instructions{},
 		constants:    []object.Object{},
+		symbolTable:  NewSymbolTable(),
 
 		lastInstruction: EmittedInstruction{},
 		prevInstruction: EmittedInstruction{},
@@ -47,7 +49,8 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return err
 		}
 
-		//what now?
+		symbol := c.symbolTable.Define(node.Name.Value)
+		c.emit(code.OpSetGlobal, symbol.Index)
 
 	case *ast.ExpressionStatement:
 		err := c.Compile(node.Expression)
@@ -161,6 +164,14 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 		postAlternativePos := len(c.instructions)
 		c.changeOperand(jumpTruthyPos, postAlternativePos)
+
+	case *ast.Identifier:
+		symbol, ok := c.symbolTable.Resolve(node.Value)
+		if !ok {
+			return fmt.Errorf("identifier %q not found in symbol table", node.Value)
+		}
+
+		c.emit(code.OpGetGlobal, symbol.Index)
 
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}
