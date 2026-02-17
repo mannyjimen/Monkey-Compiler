@@ -94,6 +94,17 @@ func TestIfExpressions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestGlobalLetStatements(t *testing.T) {
+	tests := []vmTestCase{
+		{input: "let one = 1; one;", expected: 1},
+		{input: "let one = 1; let two = 2; one + two;", expected: 3},
+		{input: "let one = 1; let two = one + one; one + two;", expected: 3},
+		{input: "let four = 4; let four2 = four; (four + four2) / four2 ;", expected: 2},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 

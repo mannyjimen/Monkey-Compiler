@@ -8,7 +8,9 @@ import (
 	"github.com/mannyjimen/Monkey-Compiler/object"
 )
 
+// caps
 const StackSize = 2048
+const GlobalsSize = 65536
 
 var True = &object.Boolean{Value: true}
 var False = &object.Boolean{Value: false}
@@ -20,6 +22,8 @@ type VM struct {
 
 	stack []object.Object
 	sp    int //points to next free stack position, sp - 1 is top of stack index
+
+	globals []object.Object
 }
 
 func New(bytecode *compiler.Bytecode) *VM {
@@ -29,6 +33,8 @@ func New(bytecode *compiler.Bytecode) *VM {
 
 		stack: make([]object.Object, StackSize),
 		sp:    0,
+
+		globals: make([]object.Object, GlobalsSize),
 	}
 }
 
@@ -38,42 +44,63 @@ func (vm *VM) Run() error {
 		op := code.Opcode(vm.instructions[ip])
 
 		switch op {
+
+		case code.OpSetGlobal:
+			globalsIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			obj, err := vm.pop()
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
+			vm.globals[globalsIndex] = obj
+
+		case code.OpGetGlobal:
+			globalsIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			err := vm.push(vm.globals[globalsIndex])
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
 		case code.OpConstant:
 			constIndex := code.ReadUint16(vm.instructions[ip+1:])
 			ip += 2
 
 			err := vm.push(vm.constants[constIndex])
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
 
 			err := vm.executeInfixOperation(op)
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 
 		case code.OpEqual, code.OpNotEqual, code.OpGreaterThan:
 			err := vm.executeComparison(op)
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 
 		case code.OpBang, code.OpMinus:
 			err := vm.executePrefix(op)
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 
 		case code.OpTrue:
 			err := vm.push(True)
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 		case code.OpFalse:
 			err := vm.push(False)
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 
 		case code.OpJump:
@@ -86,7 +113,7 @@ func (vm *VM) Run() error {
 
 			condition, err := vm.pop()
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 
 			if !isTruthy(condition) {
@@ -96,12 +123,12 @@ func (vm *VM) Run() error {
 		case code.OpPop:
 			_, err := vm.pop()
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 		case code.OpNull:
 			err := vm.push(Null)
 			if err != nil {
-				return fmt.Errorf("runtime error: %s\n", err)
+				return formatRuntimeError(err)
 			}
 		}
 	}
@@ -286,4 +313,8 @@ func isTruthy(obj object.Object) bool {
 	default:
 		return true
 	}
+}
+
+func formatRuntimeError(err error) error {
+	return fmt.Errorf("runtime error: %s\n", err)
 }
