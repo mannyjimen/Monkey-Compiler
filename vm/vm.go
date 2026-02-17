@@ -38,32 +38,18 @@ func New(bytecode *compiler.Bytecode) *VM {
 	}
 }
 
+func NewWithGlobalsStore(bytecode *compiler.Bytecode, globals []object.Object) *VM {
+	vm := New(bytecode)
+	vm.globals = globals
+	return vm
+}
+
 // hot-path
 func (vm *VM) Run() error {
 	for ip := 0; ip < len(vm.instructions); ip++ {
 		op := code.Opcode(vm.instructions[ip])
 
 		switch op {
-
-		case code.OpSetGlobal:
-			globalsIndex := code.ReadUint16(vm.instructions[ip+1:])
-			ip += 2
-
-			obj, err := vm.pop()
-			if err != nil {
-				return formatRuntimeError(err)
-			}
-
-			vm.globals[globalsIndex] = obj
-
-		case code.OpGetGlobal:
-			globalsIndex := code.ReadUint16(vm.instructions[ip+1:])
-			ip += 2
-
-			err := vm.push(vm.globals[globalsIndex])
-			if err != nil {
-				return formatRuntimeError(err)
-			}
 
 		case code.OpConstant:
 			constIndex := code.ReadUint16(vm.instructions[ip+1:])
@@ -127,6 +113,26 @@ func (vm *VM) Run() error {
 			}
 		case code.OpNull:
 			err := vm.push(Null)
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
+		case code.OpSetGlobal:
+			globalsIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			obj, err := vm.pop()
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
+			vm.globals[globalsIndex] = obj
+
+		case code.OpGetGlobal:
+			globalsIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			err := vm.push(vm.globals[globalsIndex])
 			if err != nil {
 				return formatRuntimeError(err)
 			}
