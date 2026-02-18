@@ -78,6 +78,9 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LT, l.ch)
 	case '>':
 		tok = newToken(token.GT, l.ch)
+	//double quotation mark
+	case 34:
+		return l.readStringLiteral()
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -98,6 +101,27 @@ func (l *Lexer) NextToken() token.Token {
 	l.readChar()
 
 	return tok
+}
+
+func (l *Lexer) readStringLiteral() token.Token {
+	//skipping first quotations
+	l.readChar()
+	position := l.position
+
+	for l.ch != 34 && l.ch != 0 {
+		l.readChar()
+	}
+
+	//no closing quotations
+	if l.ch == 0 {
+		return newToken(token.ILLEGAL, l.ch)
+	}
+
+	stringLit := l.input[position:l.position]
+
+	//skipping second quotations
+	l.readChar()
+	return token.Token{Type: token.STRING, Literal: stringLit}
 }
 
 func (l *Lexer) readIdentifier() string {

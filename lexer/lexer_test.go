@@ -1,107 +1,100 @@
 package lexer
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/mannyjimen/Monkey-Compiler/token"
 )
 
-func TestNextToken(t *testing.T) {
-	input := `let h4llo = 20;
-	let goodbye = 10;
-	
-	let add = fn(x, y) {
-		x + y;
-	};
-	
-	let result = add(hello, goodbye);
-
-	!-/*7<>
-	return if else true false
-	5 != 10;
-	6 == 6;
-	`
-
-	tests := []struct {
+type lexerTestCase struct {
+	input    string
+	expected []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
-	}{
-		{token.LET, "let"},
-		{token.IDENT, "h4llo"},
-		{token.ASSIGN, "="},
-		{token.INT, "20"},
-		{token.SEMICOLON, ";"},
-		{token.LET, "let"},
-		{token.IDENT, "goodbye"},
-		{token.ASSIGN, "="},
-		{token.INT, "10"},
-		{token.SEMICOLON, ";"},
-		{token.LET, "let"},
-		{token.IDENT, "add"},
-		{token.ASSIGN, "="},
-		{token.FUNCTION, "fn"},
-		{token.LPAREN, "("},
-		{token.IDENT, "x"},
-		{token.COMMA, ","},
-		{token.IDENT, "y"},
-		{token.RPAREN, ")"},
-		{token.LBRACE, "{"},
-		{token.IDENT, "x"},
-		{token.PLUS, "+"},
-		{token.IDENT, "y"},
-		{token.SEMICOLON, ";"},
-		{token.RBRACE, "}"},
-		{token.SEMICOLON, ";"},
-		{token.LET, "let"},
-		{token.IDENT, "result"},
-		{token.ASSIGN, "="},
-		{token.IDENT, "add"},
-		{token.LPAREN, "("},
-		{token.IDENT, "hello"},
-		{token.COMMA, ","},
-		{token.IDENT, "goodbye"},
-		{token.RPAREN, ")"},
-		{token.SEMICOLON, ";"},
-		{token.BANG, "!"},
-		{token.MINUS, "-"},
-		{token.SLASH, "/"},
-		{token.ASTERISK, "*"},
-		{token.INT, "7"},
-		{token.LT, "<"},
-		{token.GT, ">"},
-		{token.RETURN, "return"},
-		{token.IF, "if"},
-		{token.ELSE, "else"},
-		{token.TRUE, "true"},
-		{token.FALSE, "false"},
-		{token.INT, "5"},
-		{token.NOT_EQ, "!="},
-		{token.INT, "10"},
-		{token.SEMICOLON, ";"},
-		{token.INT, "6"},
-		{token.EQ, "=="},
-		{token.INT, "6"},
-		{token.SEMICOLON, ";"},
-		{token.EOF, ""},
+	}
+}
+
+func TestNextToken(t *testing.T) {
+	test := lexerTestCase{
+		input: `let h4llo = 20;
+		let goodbye = 10;
+		
+		let add = fn(x, y) {
+			x + y;
+		};
+		
+		let result = add(hello, goodbye);
+
+		!-/*7<>
+		return if else true false
+		5 != 10;
+		6 == 6;
+		`,
+		expected: []struct {
+			expectedType    token.TokenType
+			expectedLiteral string
+		}{
+			{token.LET, "let"},
+			{token.IDENT, "h4llo"},
+			{token.ASSIGN, "="},
+			{token.INT, "20"},
+			{token.SEMICOLON, ";"},
+			{token.LET, "let"},
+			{token.IDENT, "goodbye"},
+			{token.ASSIGN, "="},
+			{token.INT, "10"},
+			{token.SEMICOLON, ";"},
+			{token.LET, "let"},
+			{token.IDENT, "add"},
+			{token.ASSIGN, "="},
+			{token.FUNCTION, "fn"},
+			{token.LPAREN, "("},
+			{token.IDENT, "x"},
+			{token.COMMA, ","},
+			{token.IDENT, "y"},
+			{token.RPAREN, ")"},
+			{token.LBRACE, "{"},
+			{token.IDENT, "x"},
+			{token.PLUS, "+"},
+			{token.IDENT, "y"},
+			{token.SEMICOLON, ";"},
+			{token.RBRACE, "}"},
+			{token.SEMICOLON, ";"},
+			{token.LET, "let"},
+			{token.IDENT, "result"},
+			{token.ASSIGN, "="},
+			{token.IDENT, "add"},
+			{token.LPAREN, "("},
+			{token.IDENT, "hello"},
+			{token.COMMA, ","},
+			{token.IDENT, "goodbye"},
+			{token.RPAREN, ")"},
+			{token.SEMICOLON, ";"},
+			{token.BANG, "!"},
+			{token.MINUS, "-"},
+			{token.SLASH, "/"},
+			{token.ASTERISK, "*"},
+			{token.INT, "7"},
+			{token.LT, "<"},
+			{token.GT, ">"},
+			{token.RETURN, "return"},
+			{token.IF, "if"},
+			{token.ELSE, "else"},
+			{token.TRUE, "true"},
+			{token.FALSE, "false"},
+			{token.INT, "5"},
+			{token.NOT_EQ, "!="},
+			{token.INT, "10"},
+			{token.SEMICOLON, ";"},
+			{token.INT, "6"},
+			{token.EQ, "=="},
+			{token.INT, "6"},
+			{token.SEMICOLON, ";"},
+			{token.EOF, ""},
+		},
 	}
 
-	l := New(input)
-	for i, tt := range tests {
-		tok := l.NextToken()
-
-		fmt.Printf("%+v\n", tok)
-
-		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
-				i, tt.expectedType, tok.Type)
-		}
-
-		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got%q",
-				i, tt.expectedLiteral, tok.Literal)
-		}
-	}
+	runLexerTests(t, test)
 }
 
 func TestIdentLexing(t *testing.T) {
@@ -119,6 +112,55 @@ func TestIdentLexing(t *testing.T) {
 
 		if (tok.Type == token.IDENT) != (tt.isIdent) {
 			t.Errorf("incorrectly parsed ident, %q is not an ident", tt.input)
+		}
+	}
+}
+
+func TestStringLexing(t *testing.T) {
+	test := lexerTestCase{
+		input: `
+		"hello";
+		"5";
+		"ho use"
+		num
+		"foo";
+		"true"
+		true;`,
+		expected: []struct {
+			expectedType    token.TokenType
+			expectedLiteral string
+		}{
+			{token.STRING, "hello"},
+			{token.SEMICOLON, ";"},
+			{token.STRING, "5"},
+			{token.SEMICOLON, ";"},
+			{token.STRING, "ho use"},
+			{token.IDENT, "num"},
+			{token.STRING, "foo"},
+			{token.SEMICOLON, ";"},
+			{token.STRING, "true"},
+			{token.TRUE, "true"},
+			{token.SEMICOLON, ";"},
+		},
+	}
+
+	runLexerTests(t, test)
+}
+
+func runLexerTests(t *testing.T, test lexerTestCase) {
+	t.Helper()
+	l := New(test.input)
+	for i, tt := range test.expected {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected %q, got %q",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected %q, got %q",
+				i, tt.expectedLiteral, tok.Literal)
 		}
 	}
 }

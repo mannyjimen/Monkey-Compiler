@@ -184,6 +184,30 @@ func TestIdentifierExpression(t *testing.T) {
 	}
 }
 
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"hello string literals";`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	checkOneStatementInProgram(t, program)
+	stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+
+	literal, ok := stmt.Expression.(*ast.StringLiteral)
+	if !ok {
+		t.Fatalf("expression literal is not an *ast.StringLiteral, got %T", stmt.Expression)
+	}
+
+	if literal.Value != "hello string literals" {
+		t.Errorf("incorrect StringLiteral Value, expected %q, got %s", "hello", literal.Value)
+	}
+
+	if literal.TokenLiteral() != "hello string literals" {
+		t.Errorf("StringLiteral.TokenLiteral is incorrect, expected 'hello string literals', got %q", literal.TokenLiteral())
+	}
+}
+
 func TestIntegerLiteralExpression(t *testing.T) {
 	input := `5;`
 

@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mannyjimen/Monkey-Compiler/token"
@@ -27,5 +28,14 @@ func TestString(t *testing.T) {
 	if program.String() != "let myVar = anotherVar;" {
 		//Errorf because this error doesn't make subsequent tests impossible (philosophical)
 		t.Errorf("program.String() incorrect, got=%q", program.String())
+	}
+}
+
+func TestStringForStringLit(t *testing.T) {
+	astStringLit := StringLiteral{Token: token.Token{Type: token.STRING, Literal: "hello"}, Value: "hello"}
+
+	expected := fmt.Sprintf("%chello%c", 34, 34)
+	if astStringLit.String() != expected {
+		t.Errorf("StringLiteral .String() incorrect, got %s, expected %s", astStringLit.String(), expected)
 	}
 }
