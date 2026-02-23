@@ -67,6 +67,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACK, p.parseArrayLiteral)
 
 	//registering expression infix parse funcs
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -390,6 +391,30 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 	}
 
 	return arguments
+}
+
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	array := &ast.ArrayLiteral{
+		Elements: []ast.Expression{},
+	}
+
+	for !p.peekTokenIs(token.RBRACK) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+
+		elem := p.parseExpression(LOWEST)
+
+		array.Elements = append(array.Elements, elem)
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken()
+		}
+	}
+
+	if !p.expectPeek(token.RBRACK) {
+		return nil
+	}
+
+	return array
 }
 
 //helper functions

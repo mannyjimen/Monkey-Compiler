@@ -171,6 +171,31 @@ func (sl *StringLiteral) String() string {
 	return out.String()
 }
 
+type ArrayLiteral struct {
+	Token    token.Token
+	Elements []Expression
+}
+
+func (a *ArrayLiteral) expressionNode() {}
+func (a *ArrayLiteral) TokenLiteral() string {
+	return a.Token.Literal
+}
+func (a *ArrayLiteral) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+	for i, elem := range a.Elements {
+		out.WriteString(elem.String())
+
+		if i != len(a.Elements)-1 {
+			out.WriteString(", ")
+		}
+	}
+	out.WriteString("]")
+
+	return out.String()
+}
+
 type PrefixExpression struct {
 	Token    token.Token
 	Operator string

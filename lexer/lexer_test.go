@@ -147,8 +147,41 @@ func TestStringLexing(t *testing.T) {
 	runLexerTests(t, test)
 }
 
+func TestBracketLexing(t *testing.T) {
+	test := lexerTestCase{
+		input: `
+		let x = [5, true, "hello"];
+		[][][]`,
+		expected: []struct {
+			expectedType    token.TokenType
+			expectedLiteral string
+		}{
+			{token.LET, "let"},
+			{token.IDENT, "x"},
+			{token.ASSIGN, "="},
+			{token.LBRACK, "["},
+			{token.INT, "5"},
+			{token.COMMA, ","},
+			{token.TRUE, "true"},
+			{token.COMMA, ","},
+			{token.STRING, "hello"},
+			{token.RBRACK, "]"},
+			{token.SEMICOLON, ";"},
+			{token.LBRACK, "["},
+			{token.RBRACK, "]"},
+			{token.LBRACK, "["},
+			{token.RBRACK, "]"},
+			{token.LBRACK, "["},
+			{token.RBRACK, "]"},
+		},
+	}
+
+	runLexerTests(t, test)
+}
+
 func runLexerTests(t *testing.T, test lexerTestCase) {
 	t.Helper()
+
 	l := New(test.input)
 	for i, tt := range test.expected {
 		tok := l.NextToken()
