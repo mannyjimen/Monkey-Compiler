@@ -676,6 +676,10 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"(5)",
 			"5",
 		},
+		{
+			"myArray[5] * 4",
+			"((myArray[5]) * 4)",
+		},
 	}
 
 	for _, tt := range tests {
@@ -779,6 +783,36 @@ func TestParsingArrayLiterals(t *testing.T) {
 			testLiteralExpression(t, arrayLit.Elements[i], elem)
 		}
 	}
+}
+
+func TestParsingIndexExpressions(t *testing.T) {
+	tests := []struct {
+		input         string
+		expectedIndex int64
+	}{
+		{`myArray[5];`, 5},
+		{`[5][5];`, 5},
+		{`[5, 3, 2, 1][10]`, 10},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
+
+		exprStmt := program.Statements[0].(*ast.ExpressionStatement)
+		expr := exprStmt.Expression
+		indexExpr, ok := expr.(*ast.IndexExpression)
+		if !ok {
+			t.Fatalf("Expression is not an *ast.IndexExpression")
+		}
+
+		if !testIntegerLiteral(t, indexExpr.Index, tt.expectedIndex) {
+			return
+		}
+	}
+
 }
 
 func testIntegerLiteral(t *testing.T, expr ast.Expression, value int64) bool {
