@@ -183,14 +183,14 @@ func (a *ArrayLiteral) TokenLiteral() string {
 func (a *ArrayLiteral) String() string {
 	var out bytes.Buffer
 
-	out.WriteString("[")
-	for i, elem := range a.Elements {
-		out.WriteString(elem.String())
+	elems := []string{}
 
-		if i != len(a.Elements)-1 {
-			out.WriteString(", ")
-		}
+	for _, elem := range a.Elements {
+		elems = append(elems, elem.String())
 	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elems, ", "))
 	out.WriteString("]")
 
 	return out.String()

@@ -752,6 +752,7 @@ func TestParsingArrayLiterals(t *testing.T) {
 		input            string
 		expectedElements []any
 	}{
+		{`[]`, []any{}},
 		{`[5]`, []any{5}},
 		{`[5, true, "hello"]`, []any{5, true, "hello"}},
 	}
