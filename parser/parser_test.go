@@ -815,6 +815,123 @@ func TestParsingIndexExpressions(t *testing.T) {
 
 }
 
+func TestParsingHashLiteralsStringKeys(t *testing.T) {
+	test := struct {
+		input    string
+		expected map[string]int64
+	}{
+		`{"hello" : 4, "x" : 2, "simple": 123}`,
+		map[string]int64{"hello": 4, "x": 2, "simple": 123},
+	}
+
+	l := lexer.New(test.input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	exprStmt := program.Statements[0].(*ast.ExpressionStatement)
+	expr := exprStmt.Expression
+	hashLit, ok := expr.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("Expression is not an *ast.HashLiteral")
+	}
+
+	if len(hashLit.Pairs) != len(test.expected) {
+		t.Fatalf("incorrect hash length, got %d, expected %d",
+			len(hashLit.Pairs), len(test.expected))
+	}
+
+	//testing for matching key and value pairs
+	for key, val := range hashLit.Pairs {
+		stringKey, ok := key.(*ast.StringLiteral)
+		if !ok {
+			t.Errorf("key is not a *ast.StringLiteral, got %T instead", key)
+			continue
+		}
+
+		expectedVal, ok := test.expected[stringKey.Value]
+		if !ok {
+			t.Errorf("key %s does not exist in parsed map", stringKey.Value)
+			continue
+		}
+
+		testIntegerLiteral(t, val, expectedVal)
+	}
+
+}
+
+func TestParsingHashLiteralsEmpty(t *testing.T) {
+	test := struct {
+		input    string
+		expected map[string]int64
+	}{
+		`{}`,
+		map[string]int64{},
+	}
+
+	l := lexer.New(test.input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	exprStmt := program.Statements[0].(*ast.ExpressionStatement)
+	expr := exprStmt.Expression
+	hashLit, ok := expr.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("Expression is not an *ast.HashLiteral")
+	}
+
+	if len(hashLit.Pairs) != len(test.expected) {
+		t.Fatalf("incorrect hash length, got %d, expected %d",
+			len(hashLit.Pairs), len(test.expected))
+	}
+}
+
+// func TestParsingHashLiteralsWithExpressions(t *testing.T) {
+// 	test := struct {
+// 		input    string
+// 		expected map[any]func
+// 	}{
+// 		`{1 + 1 : 4, "x" : 2, "simple": 123}`,
+// 		map[any]any{"hello": 4, "x": 2, "simple": 123},
+// 	}
+
+// 	l := lexer.New(test.input)
+// 	p := New(l)
+// 	program := p.ParseProgram()
+// 	checkParseErrors(t, p)
+
+// 	exprStmt := program.Statements[0].(*ast.ExpressionStatement)
+// 	expr := exprStmt.Expression
+// 	hashLit, ok := expr.(*ast.HashLiteral)
+// 	if !ok {
+// 		t.Fatalf("Expression is not an *ast.HashLiteral")
+// 	}
+
+// 	if len(hashLit.Pairs) != len(test.expected) {
+// 		t.Fatalf("incorrect hash length, got %d, expected %d",
+// 			len(hashLit.Pairs), len(test.expected))
+// 	}
+
+// 	//testing for matching key and value pairs
+// 	for key, val := range hashLit.Pairs {
+// 		stringKey, ok := key.(*ast.StringLiteral)
+// 		if !ok {
+// 			t.Errorf("key is not a *ast.StringLiteral, got %T instead", key)
+// 			continue
+// 		}
+
+// 		expectedVal, ok := test.expected[stringKey.Value]
+// 		if !ok {
+// 			t.Errorf("key %s does not exist in parsed map", stringKey.Value)
+// 			continue
+// 		}
+
+// 		testIntegerLiteral(t, val, expectedVal)
+// 	}
+
+// }
+
 func testIntegerLiteral(t *testing.T, expr ast.Expression, value int64) bool {
 	t.Helper()
 	integerLitExpr, ok := expr.(*ast.IntegerLiteral)

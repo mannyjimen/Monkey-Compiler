@@ -179,6 +179,35 @@ func TestBracketLexing(t *testing.T) {
 	runLexerTests(t, test)
 }
 
+func TestColonLexing(t *testing.T) {
+	test := lexerTestCase{
+		input: `
+		let x = {5 : 4};
+		: hello : hello;`,
+		expected: []struct {
+			expectedType    token.TokenType
+			expectedLiteral string
+		}{
+			{token.LET, "let"},
+			{token.IDENT, "x"},
+			{token.ASSIGN, "="},
+			{token.LBRACE, "{"},
+			{token.INT, "5"},
+			{token.COLON, ":"},
+			{token.INT, "4"},
+			{token.RBRACE, "}"},
+			{token.SEMICOLON, ";"},
+			{token.COLON, ":"},
+			{token.IDENT, "hello"},
+			{token.COLON, ":"},
+			{token.IDENT, "hello"},
+			{token.SEMICOLON, ";"},
+		},
+	}
+
+	runLexerTests(t, test)
+}
+
 func runLexerTests(t *testing.T, test lexerTestCase) {
 	t.Helper()
 
