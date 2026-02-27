@@ -860,6 +860,94 @@ func TestParsingHashLiteralsStringKeys(t *testing.T) {
 
 }
 
+func TestParsingHashLiteralsIntegerKeys(t *testing.T) {
+	test := struct {
+		input    string
+		expected map[int64]int64
+	}{
+		`{5 : 4, 10 : 2, 111: 123}`,
+		map[int64]int64{5: 4, 10: 2, 111: 123},
+	}
+
+	l := lexer.New(test.input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	exprStmt := checkAndGetExpressionStatement(t, program.Statements[0])
+	expr := exprStmt.Expression
+	hashLit, ok := expr.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("Expression is not an *ast.HashLiteral")
+	}
+
+	if len(hashLit.Pairs) != len(test.expected) {
+		t.Fatalf("incorrect hash length, got %d, expected %d",
+			len(hashLit.Pairs), len(test.expected))
+	}
+
+	//testing for matching key and value pairs
+	for key, val := range hashLit.Pairs {
+		intKey, ok := key.(*ast.IntegerLiteral)
+		if !ok {
+			t.Errorf("key is not a *ast.IntegerLiteral, got %T instead", key)
+			continue
+		}
+
+		expectedVal, ok := test.expected[intKey.Value]
+		if !ok {
+			t.Errorf("key %q does not exist in parsed map", intKey.Value)
+			continue
+		}
+
+		testIntegerLiteral(t, val, expectedVal)
+	}
+}
+
+func TestParsingHashLiteralsBooleanKeys(t *testing.T) {
+	test := struct {
+		input    string
+		expected map[bool]int64
+	}{
+		`{true : 4, false : 2}`,
+		map[bool]int64{true: 4, false: 2},
+	}
+
+	l := lexer.New(test.input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	exprStmt := checkAndGetExpressionStatement(t, program.Statements[0])
+	expr := exprStmt.Expression
+	hashLit, ok := expr.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("Expression is not an *ast.HashLiteral")
+	}
+
+	if len(hashLit.Pairs) != len(test.expected) {
+		t.Fatalf("incorrect hash length, got %d, expected %d",
+			len(hashLit.Pairs), len(test.expected))
+	}
+
+	//testing for matching key and value pairs
+	for key, val := range hashLit.Pairs {
+		boolKey, ok := key.(*ast.Boolean)
+		if !ok {
+			t.Errorf("key is not a *ast.Boolean, got %T instead", key)
+			continue
+		}
+
+		expectedVal, ok := test.expected[boolKey.Value]
+		if !ok {
+			t.Errorf("key %t does not exist in parsed map", boolKey.Value)
+			continue
+		}
+
+		testIntegerLiteral(t, val, expectedVal)
+	}
+}
+
 func TestParsingHashLiteralsEmpty(t *testing.T) {
 	test := struct {
 		input    string
@@ -890,11 +978,9 @@ func TestParsingHashLiteralsEmpty(t *testing.T) {
 
 func TestParsingHashLiteralsWithExpressions(t *testing.T) {
 	test := struct {
-		input    string
-		expected map[any]any
+		input string
 	}{
-		`{1 + 1 : 4, "x" : 2, "simple": 123}`,
-		map[any]any{2: 4, "x": 2, "simple": 123},
+		`{"first" : 4 + 4, "x" : 2 / 2, "simple": 15 * 2}`,
 	}
 
 	l := lexer.New(test.input)
@@ -910,14 +996,26 @@ func TestParsingHashLiteralsWithExpressions(t *testing.T) {
 		t.Fatalf("Expression is not an *ast.HashLiteral")
 	}
 
-	if len(hashLit.Pairs) != len(test.expected) {
+	if len(hashLit.Pairs) != 3 {
 		t.Fatalf("incorrect hash length, got %d, expected %d",
-			len(hashLit.Pairs), len(test.expected))
+			len(hashLit.Pairs), 3)
 	}
 
 	//testing for matching key and value pairs
 	for key, value := range hashLit.Pairs {
+		stringKey, ok := key.(*ast.StringLiteral)
+		if !ok {
+			t.Fatalf("key is not *ast.StringLiteral, got %T instead", key)
+		}
 
+		switch stringKey.Value {
+		case "first":
+			testInfixExpression(t, value, 4, "+", 4)
+		case "x":
+			testInfixExpression(t, value, 2, "/", 2)
+		case "simple":
+			testInfixExpression(t, value, 15, "*", 2)
+		}
 	}
 
 }

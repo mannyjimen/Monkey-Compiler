@@ -70,6 +70,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACK, p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
 
 	//registering expression infix parse funcs
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -417,6 +418,44 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	}
 
 	return indexExpr
+}
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+	hashLit := &ast.HashLiteral{
+		Token: p.currToken,
+		Pairs: make(map[ast.Expression]ast.Expression),
+	}
+
+	for !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+
+		key := p.parseExpression(LOWEST)
+
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+		p.nextToken()
+
+		value := p.parseExpression(LOWEST)
+
+		hashLit.Pairs[key] = value
+
+		//more lenient check
+		// if p.peekTokenIs(token.COMMA) {
+		// 	p.nextToken()
+		// }
+
+		//better more ROBUST way of checking for syntax error
+		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) {
+			return nil
+		}
+	}
+
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+
+	return hashLit
 }
 
 //helper functions
