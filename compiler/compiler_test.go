@@ -340,6 +340,46 @@ func TestStringExpressions(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestArrayExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			`[]`,
+			[]any{},
+			[]code.Instructions{
+				code.Make(code.OpArray, 0),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`["hello"]`,
+			[]any{"hello"},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+
+				code.Make(code.OpArray, 1),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`[1 + 2, "mon" + "key"]`,
+			[]any{1, 2, "mon", "key"},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
+				code.Make(code.OpConstant, 2),
+				code.Make(code.OpConstant, 3),
+				code.Make(code.OpAdd),
+
+				code.Make(code.OpArray, 2),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 

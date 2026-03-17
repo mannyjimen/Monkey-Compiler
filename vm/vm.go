@@ -136,6 +136,9 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return formatRuntimeError(err)
 			}
+
+		default:
+			return formatRuntimeError(fmt.Errorf("unknown opcode %d", op))
 		}
 	}
 

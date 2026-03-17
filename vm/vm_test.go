@@ -115,6 +115,16 @@ func TestStringExpressions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestArrayExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{input: `[]`, expected: []int{}},
+		{input: `[1, 2, 3]`, expected: []int{1, 2, 3}},
+		{input: `[1 + 2, 3 + 4]`, expected: []int{3, 7}},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 

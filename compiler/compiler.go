@@ -197,6 +197,17 @@ func (c *Compiler) Compile(node ast.Node) error {
 		strLit := &object.String{Value: node.Value}
 		c.emit(code.OpConstant, c.addConstant(strLit))
 
+	case *ast.ArrayLiteral:
+		arrLen := len(node.Elements)
+		for _, elem := range node.Elements {
+			err := c.Compile(elem)
+			if err != nil {
+				return err
+			}
+		}
+
+		c.emit(code.OpArray, arrLen)
+
 	default:
 		return fmt.Errorf("node type not handled: %T", node)
 	}
