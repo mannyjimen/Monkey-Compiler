@@ -105,6 +105,16 @@ func TestGlobalLetStatements(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestStringExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{input: `"hello"`, expected: "hello"},
+		{input: `"foo" + "bar"`, expected: "foobar"},
+		{input: `"do" + "re" + "mi"`, expected: "doremi"},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 
@@ -119,10 +129,20 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 		if err != nil {
 			t.Errorf("testExpectedObject failed: %s", err)
 		}
+	case string:
+		err := testStringObject(expected, actual)
+		if err != nil {
+			t.Errorf("testExpectedObject failed: %s", err)
+		}
+
 	case *object.Null:
 		if actual != Null {
 			t.Errorf("testExpecedObject failed: object not of type Null, got %T (%+v)", actual, actual)
 		}
+
+	default:
+		t.Errorf("testExpectedObject failed: unhandled expected object type: %T", expected)
+
 	}
 }
 
@@ -147,6 +167,20 @@ func testBooleanObject(expected bool, actual object.Object) error {
 
 	if actualBool.Value != expected {
 		return fmt.Errorf("incorrect boolean value, expected %t, got %t", expected, actualBool.Value)
+	}
+
+	return nil
+}
+
+func testStringObject(expected string, actual object.Object) error {
+	actualStr, ok := actual.(*object.String)
+	if !ok {
+		return fmt.Errorf("object not of type String, got %T (%+v)", actual, actual)
+	}
+
+	if actualStr.Value != expected {
+		return fmt.Errorf("incorrect string value, expected %q, got %q",
+			expected, actualStr.Value)
 	}
 
 	return nil

@@ -307,6 +307,39 @@ func TestGlobalLetStatements(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestStringExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			`"hello"`,
+			[]any{"hello"},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`"mon" + "key"`,
+			[]any{"mon", "key"},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0), //"mon"
+				code.Make(code.OpConstant, 1), //"key"
+				code.Make(code.OpAdd),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`let x = "hello"`,
+			[]any{"hello"},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),  //hello
+				code.Make(code.OpSetGlobal, 0), // let x =
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 
@@ -362,9 +395,20 @@ func testConstants(actual []object.Object, expected []any) error {
 		case int:
 			err := testIntegerObject(int64(constant), actual[i])
 			if err != nil {
-				return fmt.Errorf("constant at index %d, testIntegerObject failed: %s",
+				return fmt.Errorf("constant at index %d - testIntegerObject failed: %s",
 					i, err)
 			}
+
+		case string:
+			err := testStringObject(constant, actual[i])
+			if err != nil {
+				return fmt.Errorf("constant at index %d - testStringObject failed: %s",
+					i, err)
+			}
+
+		default:
+			return fmt.Errorf("constant type at index %d not handled, type: %T",
+				i, constant)
 		}
 	}
 
@@ -374,11 +418,25 @@ func testConstants(actual []object.Object, expected []any) error {
 func testIntegerObject(expected int64, actual object.Object) error {
 	actualInt, ok := actual.(*object.Integer)
 	if !ok {
-		return fmt.Errorf("object not of type integer, got %T (%+v)", actual, actual)
+		return fmt.Errorf("compiled object not of type integer, got %T (%+v)", actual, actual)
 	}
 
 	if actualInt.Value != expected {
 		return fmt.Errorf("incorrect integer value, expected %d, got %d", expected, actualInt.Value)
+	}
+
+	return nil
+}
+
+func testStringObject(expected string, actual object.Object) error {
+	actualStr, ok := actual.(*object.String)
+	if !ok {
+		return fmt.Errorf("compiled object not of type string, got %T (%+v)", actual, actual)
+	}
+
+	if actualStr.Value != expected {
+		return fmt.Errorf("incorrect string value, expected %q, got %q",
+			expected, actualStr.Value)
 	}
 
 	return nil

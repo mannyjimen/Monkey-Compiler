@@ -153,14 +153,26 @@ func (vm *VM) executeInfixOperation(operator code.Opcode) error {
 		return err
 	}
 
-	leftInteger, leftValid := left.(*object.Integer)
-	rightInteger, rightValid := right.(*object.Integer)
+	leftType := left.Type()
+	rightType := right.Type()
 
-	if !leftValid || !rightValid {
-		return fmt.Errorf("left or right operand for infix operation is not Integer")
+	switch {
+	case leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ:
+		return vm.executeInfixIntegerOperation(operator, left, right)
+	case leftType == object.STRING_OBJ && rightType == object.STRING_OBJ:
+		return vm.executeInfixStringOperation(operator, left, right)
+	default:
+		return fmt.Errorf("unsupported or mismatched infix operand types: %s and %s",
+			leftType, rightType)
 	}
 
+}
+
+func (vm *VM) executeInfixIntegerOperation(operator code.Opcode, left object.Object, right object.Object) error {
 	var result int64
+
+	leftInteger := left.(*object.Integer)
+	rightInteger := right.(*object.Integer)
 
 	switch operator {
 	case code.OpAdd:
@@ -172,10 +184,26 @@ func (vm *VM) executeInfixOperation(operator code.Opcode) error {
 	case code.OpDiv:
 		result = leftInteger.Value / rightInteger.Value
 	default:
-		return fmt.Errorf("unknown infix operator: %d", operator)
+		return fmt.Errorf("unknown infix operator %d for operands of type INTEGER", operator)
 	}
 
 	return vm.push(&object.Integer{Value: result})
+}
+
+func (vm *VM) executeInfixStringOperation(operator code.Opcode, left object.Object, right object.Object) error {
+	var result string
+
+	leftStr := left.(*object.String)
+	rightStr := right.(*object.String)
+
+	switch operator {
+	case code.OpAdd:
+		result = leftStr.Value + rightStr.Value
+	default:
+		return fmt.Errorf("unsupported infix operator %d for operands of type STRING", operator)
+	}
+
+	return vm.push(&object.String{Value: result})
 }
 
 func (vm *VM) executeComparison(operator code.Opcode) error {

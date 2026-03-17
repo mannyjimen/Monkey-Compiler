@@ -54,7 +54,7 @@ func Start(in io.Reader, out io.Writer) {
 		vm := vm.NewWithGlobalsStore(code, globals)
 		err = vm.Run()
 		if err != nil {
-			fmt.Fprintf(out, "executing bytecode failed:\n%s\n", err)
+			fmt.Fprintf(out, "executing bytecode failed:\n%s", err)
 			continue
 		}
 

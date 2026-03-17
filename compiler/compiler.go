@@ -192,6 +192,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		} else {
 			c.emit(code.OpFalse)
 		}
+
+	case *ast.StringLiteral:
+		strLit := &object.String{Value: node.Value}
+		c.emit(code.OpConstant, c.addConstant(strLit))
+
 	default:
 		return fmt.Errorf("node type not handled: %T", node)
 	}
@@ -230,8 +235,9 @@ func (c *Compiler) addInstruction(instr code.Instructions) int {
 
 // returns index in const pool
 func (c *Compiler) addConstant(constant object.Object) int {
+	newConstIndex := len(c.constants)
 	c.constants = append(c.constants, constant)
-	return len(c.constants) - 1
+	return newConstIndex
 }
 
 func (c *Compiler) lastInstructionIsPop() bool {
