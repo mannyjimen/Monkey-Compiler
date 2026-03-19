@@ -145,6 +145,24 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 			t.Errorf("testExpectedObject failed: %s", err)
 		}
 
+	case []int:
+		arrLit, ok := actual.(*object.Array)
+		if !ok {
+			t.Errorf("testExpectedObject failed: expected object.Array, got %T", actual)
+		}
+
+		if len(arrLit.Elements) != len(expected) {
+			t.Errorf("incorrect number of Array elements, expected %d, got %d",
+				len(expected), len(arrLit.Elements))
+		}
+
+		for i, num := range arrLit.Elements {
+			err := testIntegerObject(int64(expected[i]), num)
+			if err != nil {
+				t.Errorf("testIntegerObject failed: %s", err)
+			}
+		}
+
 	case *object.Null:
 		if actual != Null {
 			t.Errorf("testExpecedObject failed: object not of type Null, got %T (%+v)", actual, actual)

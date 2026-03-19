@@ -84,9 +84,9 @@ func (a *Array) Inspect() string {
 		elems[i] = obj.Inspect()
 	}
 
-	out.WriteString("[ ")
+	out.WriteString("[")
 	out.WriteString(strings.Join(elems, ", "))
-	out.WriteString(" ]")
+	out.WriteString("]")
 
 	return out.String()
 }

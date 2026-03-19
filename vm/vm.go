@@ -137,12 +137,35 @@ func (vm *VM) Run() error {
 				return formatRuntimeError(err)
 			}
 
+		case code.OpArray:
+			numOperands := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+
+			arr := vm.buildArray(vm.sp-numOperands, vm.sp)
+			//updating stack pointer ignoring stack elements
+			vm.sp = vm.sp - numOperands
+
+			err := vm.push(arr)
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
 		default:
 			return formatRuntimeError(fmt.Errorf("unknown opcode %d", op))
 		}
 	}
 
 	return nil
+}
+
+func (vm *VM) buildArray(stackStart int, stackEnd int) *object.Array {
+	arr := &object.Array{}
+
+	for elemIndex := stackStart; elemIndex < stackEnd; elemIndex++ {
+		arr.Elements = append(arr.Elements, vm.stack[elemIndex])
+	}
+
+	return arr
 }
 
 func (vm *VM) executeInfixOperation(operator code.Opcode) error {
