@@ -125,6 +125,30 @@ func TestArrayExpressions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestHashExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{input: `{}`, expected: map[object.HashKey]int64{}},
+		{
+			input:    `{1 : 2}`,
+			expected: map[object.HashKey]int64{(&object.Integer{Value: 1}).HashKey(): 2},
+		},
+		{
+			input: `{1 + 2: 1 * 4, 1 : 2}`,
+			expected: map[object.HashKey]int64{
+				(&object.Integer{Value: 3}).HashKey(): 4,
+				(&object.Integer{Value: 1}).HashKey(): 2},
+		},
+		{
+			input: `{"hello": 1 * 4, 1 : 2}`,
+			expected: map[object.HashKey]int64{
+				(&object.String{Value: "hello"}).HashKey(): 4,
+				(&object.Integer{Value: 1}).HashKey():      2},
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 
@@ -158,6 +182,29 @@ func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 
 		for i, num := range arrLit.Elements {
 			err := testIntegerObject(int64(expected[i]), num)
+			if err != nil {
+				t.Errorf("testIntegerObject failed: %s", err)
+			}
+		}
+
+	case map[object.HashKey]int64:
+		hashLit, ok := actual.(*object.Hash)
+		if !ok {
+			t.Errorf("testExpectedObject failed: expected object.Hash, got %T", actual)
+		}
+
+		if len(hashLit.Pairs) != len(expected) {
+			t.Errorf("incorrect number of Hash elements, expected %d, got %d",
+				len(expected), len(hashLit.Pairs))
+		}
+
+		for expectedKey, expectedVal := range expected {
+			hashPair, ok := hashLit.Pairs[expectedKey]
+			if !ok {
+				t.Errorf("expected key does not exist %+v", expectedKey)
+			}
+
+			err := testIntegerObject(expectedVal, hashPair.Value)
 			if err != nil {
 				t.Errorf("testIntegerObject failed: %s", err)
 			}

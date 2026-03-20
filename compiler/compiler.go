@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/mannyjimen/Monkey-Compiler/ast"
 	"github.com/mannyjimen/Monkey-Compiler/code"
@@ -207,6 +208,34 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 
 		c.emit(code.OpArray, arrLen)
+
+	case *ast.HashLiteral:
+		hashLen := len(node.Pairs) * 2
+
+		//sort keys for consistency for tests
+		keys := []ast.Expression{}
+
+		for k := range node.Pairs {
+			keys = append(keys, k)
+		}
+
+		//sort by string values
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i].String() < keys[j].String()
+		})
+
+		for _, k := range keys {
+			err := c.Compile(k)
+			if err != nil {
+				return err
+			}
+			err = c.Compile(node.Pairs[k])
+			if err != nil {
+				return err
+			}
+		}
+
+		c.emit(code.OpHash, hashLen)
 
 	default:
 		return fmt.Errorf("node type not handled: %T", node)

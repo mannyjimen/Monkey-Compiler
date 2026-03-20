@@ -150,6 +150,21 @@ func (vm *VM) Run() error {
 				return formatRuntimeError(err)
 			}
 
+		case code.OpHash:
+			numHashValues := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+			hash, err := vm.buildHash(vm.sp-numHashValues, vm.sp)
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
+			vm.sp = vm.sp - numHashValues
+
+			err = vm.push(hash)
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
 		default:
 			return formatRuntimeError(fmt.Errorf("unknown opcode %d", op))
 		}
@@ -166,6 +181,27 @@ func (vm *VM) buildArray(stackStart int, stackEnd int) *object.Array {
 	}
 
 	return arr
+}
+
+func (vm *VM) buildHash(stackStart int, stackEnd int) (*object.Hash, error) {
+	hash := &object.Hash{Pairs: make(map[object.HashKey]object.HashPair)}
+
+	for currKeyIndex := stackStart; currKeyIndex < stackEnd; currKeyIndex += 2 {
+		currPairIndex := currKeyIndex + 1
+
+		key := vm.stack[currKeyIndex]
+		value := vm.stack[currPairIndex]
+
+		hashableObj, ok := key.(object.Hashable)
+		if !ok {
+			return nil, fmt.Errorf("key type is not hashable: %s", key.Type())
+		}
+
+		hashPair := object.HashPair{Key: key, Value: value}
+		hash.Pairs[hashableObj.HashKey()] = hashPair
+	}
+
+	return hash, nil
 }
 
 func (vm *VM) executeInfixOperation(operator code.Opcode) error {
