@@ -149,6 +149,24 @@ func TestHashExpressions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestIndexOperatorExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{input: `[1][0]`, expected: 1},
+		{input: `[1, 2 + 2][1]`, expected: 4},
+		{input: `{1 : 1, "monkey" : "hello"}["mon" + "key"]`, expected: "hello"},
+
+		//harsher cases
+		{input: `[][0]`, expected: Null},
+		{input: `[1, 2, 3][50]`, expected: Null},
+		{input: `[1, 2, 3][-1]`, expected: Null},
+		{input: `{"hey": "goodbye"}["monkey"]`, expected: Null},
+		{input: `[[1, 2], 3][0][0]`, expected: 1},
+		{input: `{}[0]`, expected: Null},
+	}
+
+	runVmTests(t, tests)
+}
+
 func testExpectedObject(t *testing.T, expected any, actual object.Object) {
 	t.Helper()
 

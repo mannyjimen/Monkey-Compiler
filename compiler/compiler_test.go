@@ -424,6 +424,74 @@ func TestHashExpressions(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestIndexOperatorExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			`[1, 2, 3][1]`,
+			[]any{1, 2, 3, 1},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpConstant, 2),
+
+				code.Make(code.OpArray, 3), //array
+
+				code.Make(code.OpConstant, 3), //index
+
+				code.Make(code.OpIndex),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`[1 + 1, 2, 5 * 5][1 + 1]`,
+			[]any{1, 1, 2, 5, 5, 1, 1},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
+				code.Make(code.OpConstant, 2),
+				code.Make(code.OpConstant, 3),
+				code.Make(code.OpConstant, 4),
+				code.Make(code.OpMul),
+
+				code.Make(code.OpArray, 3), //array
+
+				code.Make(code.OpConstant, 5),
+				code.Make(code.OpConstant, 6),
+				code.Make(code.OpAdd),
+
+				code.Make(code.OpIndex),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`{1 + 1: 2, 3: 5 * 5}[1 + 1]`,
+			[]any{1, 1, 2, 3, 5, 5, 1, 1},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
+				code.Make(code.OpConstant, 2),
+				code.Make(code.OpConstant, 3),
+				code.Make(code.OpConstant, 4),
+				code.Make(code.OpConstant, 5),
+				code.Make(code.OpMul),
+
+				code.Make(code.OpHash, 4), //hash
+
+				code.Make(code.OpConstant, 6),
+				code.Make(code.OpConstant, 7),
+				code.Make(code.OpAdd),
+
+				code.Make(code.OpIndex),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 

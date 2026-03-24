@@ -165,12 +165,65 @@ func (vm *VM) Run() error {
 				return formatRuntimeError(err)
 			}
 
+		case code.OpIndex:
+			index, err := vm.pop()
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+			data, err := vm.pop()
+			if err != nil {
+				return formatRuntimeError(err)
+			}
+
+			vm.executeIndexOperation(index, data)
+
 		default:
 			return formatRuntimeError(fmt.Errorf("unknown opcode %d", op))
 		}
 	}
 
 	return nil
+}
+
+func (vm *VM) executeIndexOperation(index, data object.Object) error {
+	switch data.Type() {
+	case object.ARRAY_OBJ:
+		return vm.indexArray(index, data)
+	case object.HASH_OBJ:
+		return vm.indexHash(index, data)
+	default:
+		return formatRuntimeError(fmt.Errorf("not able to index into type %s", data.Type()))
+	}
+}
+
+func (vm *VM) indexArray(index, data object.Object) error {
+	indexInt, ok := index.(*object.Integer)
+	//invalid index type for array
+	if !ok {
+		return vm.push(Null)
+	}
+
+	arr := data.(*object.Array)
+	if int(indexInt.Value) >= len(arr.Elements) || indexInt.Value < 0 {
+		return vm.push(Null)
+	} else {
+		return vm.push(arr.Elements[indexInt.Value])
+	}
+}
+
+func (vm *VM) indexHash(index, data object.Object) error {
+	key, ok := index.(object.Hashable)
+	if !ok {
+		return vm.push(Null)
+	}
+
+	hash := data.(*object.Hash)
+	result, ok := hash.Pairs[key.HashKey()]
+	if !ok {
+		return vm.push(Null)
+	} else {
+		return vm.push(result.Value)
+	}
 }
 
 func (vm *VM) buildArray(stackStart int, stackEnd int) *object.Array {
