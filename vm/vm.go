@@ -8,7 +8,7 @@ import (
 	"github.com/mannyjimen/Monkey-Compiler/object"
 )
 
-// caps
+// size capacities
 const StackSize = 2048
 const GlobalsSize = 65536
 

@@ -492,6 +492,29 @@ func TestIndexOperatorExpressions(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestFunctions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			`fn() { return 5 + 10; }`,
+			[]any{
+				5,
+				10,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpAdd),
+					code.Make(code.OpReturnValue),
+				},
+			},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 2),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+	runCompilerTests(t, tests)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 
@@ -556,6 +579,16 @@ func testConstants(actual []object.Object, expected []any) error {
 			if err != nil {
 				return fmt.Errorf("constant at index %d - testStringObject failed: %s",
 					i, err)
+			}
+		case []code.Instructions:
+			compiledFn, ok := actual[i].(*object.CompiledFunction)
+			if !ok {
+				return fmt.Errorf("constant at index %d, expected COMPILED_FUNCTION, got %s", i, actual[i].Type())
+			}
+
+			err := testInstructions(compiledFn.Instructions, constant)
+			if err != nil {
+				return fmt.Errorf("constant at index %d - testInstructions failed: %s", i, err)
 			}
 
 		default:
