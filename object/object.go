@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strings"
+
+	"github.com/mannyjimen/Monkey-Compiler/code"
 )
 
 type ObjectType string
 
 const (
-	INTEGER_OBJ = "INTEGER"
-	BOOLEAN_OBJ = "BOOLEAN"
-	STRING_OBJ  = "STRING"
-	ARRAY_OBJ   = "ARRAY"
-	HASH_OBJ    = "HASH"
-	NULL_OBJ    = "NULL"
+	INTEGER_OBJ           = "INTEGER"
+	BOOLEAN_OBJ           = "BOOLEAN"
+	STRING_OBJ            = "STRING"
+	ARRAY_OBJ             = "ARRAY"
+	HASH_OBJ              = "HASH"
+	NULL_OBJ              = "NULL"
+	COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION"
 )
 
 type Object interface {
@@ -121,6 +124,15 @@ func (h *Hash) Inspect() string {
 	out.WriteString("}")
 
 	return out.String()
+}
+
+type CompiledFunction struct {
+	Instructions code.Instructions
+}
+
+func (cf *CompiledFunction) Type() ObjectType { return COMPILED_FUNCTION_OBJ }
+func (cf *CompiledFunction) Inspect() string {
+	return fmt.Sprintf("CompiledFunctions[%p]", cf)
 }
 
 type Null struct{}
