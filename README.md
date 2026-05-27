@@ -43,6 +43,10 @@ let add = fn(x, y) { x + y };
 let c = add(a, b);
 ```
 
+## CURRENT STATE:
+Compiler frontend can parse all data types, including function literals, and call expressions.  
+Compiler backend cannot yet compile function literal and call expression nodes to bytecode, and virtual machine therefore cannot execute anything involving these data types.
+
 ## Reason for Monkey!
 After building my [interpreter](https://github.com/mannyjimen/Mini-Compiler) in C++, I was left wanting more. Compilers have always sounded like something very complex and difficult, but isn't everything in life? If I can say I have built a compiler, that is something I would be proud of. Seeing something come alive from nothing is what made me love building my interpreter, and managing to build a compiler pushes my passion further!
 
