@@ -11,6 +11,10 @@ Monkey-Compiler is an implementation of the compiler for the *Monkey Programming
 - *first-class functions*  
 and many more!
 
+## Architecture
+
+![Monkey Compiler Architecture](assets/MonkeyArchitectureDiagram.png)
+
 ## Status
 
 Monkey-Compiler includes:  
@@ -25,8 +29,10 @@ Monkey-Compiler includes:
 - bytecode definition
 - virtual machine
 - compiler
-- symbol table
-- constants pool
+
+## CURRENT STATE:
+Compiler frontend can parse all data types, including function literals, and call expressions.  
+Compiler backend cannot yet compile function literal and call expression nodes to bytecode, and virtual machine therefore cannot execute anything involving these data types.
 
 ## Technical Highlights
 
