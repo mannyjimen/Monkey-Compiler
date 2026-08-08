@@ -1,6 +1,6 @@
 # Monkey Compiler
 
-[DEMO](https://mannyns.dev/compiler), there is now a working demo for this project on my personal site, check it out!
+There is now a working [demo](https://mannyns.dev/compiler) for this project on my personal site, check it out!
 
 Monkey-Compiler is an implementation of the compiler for the *Monkey Programming Language* by Thorsten Ball, with a bit of added features.
 
