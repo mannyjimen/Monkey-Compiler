@@ -359,41 +359,51 @@ func TestIfElseExpression(t *testing.T) {
 }
 
 func TestFunctionLiteralExpression(t *testing.T) {
-	input := `fn(x, y) { x + y; }`
-
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	checkParseErrors(t, p)
-
-	checkOneStatementInProgram(t, program)
-	stmt := checkAndGetExpressionStatement(t, program.Statements[0])
-	expr := stmt.Expression
-
-	funcLitExpr, ok := expr.(*ast.FunctionLiteral)
-	if !ok {
-		t.Fatalf("expr is not an *ast.FunctionLiteral, got %T", expr)
+	tests := []struct {
+		input                  string
+		expectedParameters     []string
+		expectedBodyStatements [][]string
+	}{
+		{"fn(x, y) {x + y;}", []string{"x", "y"}, [][]string{{"x", "+", "y"}}},
+		{"fn(x, y, z) { x + y; y - z; }", []string{"x", "y", "z"}, [][]string{{"x", "+", "y"}, {"y", "-", "z"}}},
+		{"fn() {x + y; y - z; hello * charles; }", []string{}, [][]string{{"x", "+", "y"}, {"y", "-", "z"}, {"hello", "*", "charles"}}},
 	}
 
-	//testing parsed parameters
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParseErrors(t, p)
 
-	if len(funcLitExpr.Parameters) != 2 {
-		t.Fatalf("FunctionLiteral parameter count is incorrect, expected 2, got %d", len(funcLitExpr.Parameters))
+		checkOneStatementInProgram(t, program)
+		stmt := checkAndGetExpressionStatement(t, program.Statements[0])
+		function, ok := stmt.Expression.(*ast.FunctionLiteral)
+
+		if !ok {
+			t.Fatalf("expr is not an *ast.FunctionLiteral, got %T", stmt.Expression)
+		}
+
+		if len(function.Parameters) != len(tt.expectedParameters) {
+			t.Fatalf("Function parameter count is incorrect, expected %d, got %d", len(tt.expectedParameters), len(function.Parameters))
+		}
+
+		for i, param := range function.Parameters {
+			testLiteralExpression(t, param, tt.expectedParameters[i])
+		}
+
+		//testing block statement
+		if len(function.Body.Statements) != len(tt.expectedBodyStatements) {
+			t.Fatalf("Function body statement count is incorrect, expected %d, got %d", len(tt.expectedBodyStatements), len(function.Body.Statements))
+		}
+
+		for i, bodyStmt := range function.Body.Statements {
+			bodyExprStmt := checkAndGetExpressionStatement(t, bodyStmt)
+			testInfixExpression(t, bodyExprStmt.Expression,
+				tt.expectedBodyStatements[i][0],
+				tt.expectedBodyStatements[i][1],
+				tt.expectedBodyStatements[i][2])
+		}
 	}
-
-	testLiteralExpression(t, funcLitExpr.Parameters[0], "x")
-	testLiteralExpression(t, funcLitExpr.Parameters[1], "y")
-
-	//testing parsed block
-
-	if len(funcLitExpr.Body.Statements) != 1 {
-		t.Fatalf("FunctionLiteral block statement count is incorrect, expected 1, got %d",
-			len(funcLitExpr.Body.Statements))
-	}
-
-	bodyStmt := checkAndGetExpressionStatement(t, funcLitExpr.Body.Statements[0])
-
-	testInfixExpression(t, bodyStmt.Expression, "x", "+", "y")
 
 }
 
