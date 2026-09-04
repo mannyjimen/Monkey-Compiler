@@ -515,6 +515,54 @@ func TestFunctions(t *testing.T) {
 	runCompilerTests(t, tests)
 }
 
+func TestCompilationScopes(t *testing.T) {
+	compiler := New()
+
+	compiler.emit(code.OpMul)
+
+	if compiler.scopeIndex != 0 {
+		t.Fatalf("Incorrect scope index, expected 0, got %d", compiler.scopeIndex)
+	}
+
+	compiler.enterScope()
+
+	if compiler.scopeIndex != 1 {
+		t.Fatalf("Incorrect scope index, expected 1, got %d", compiler.scopeIndex)
+	}
+
+	compiler.emit(code.OpBang)
+
+	if len(compiler.scope[compiler.scopeIndex].instructions) != 1 {
+		t.Fatalf("Incorrect number of instructions in current scope, expected 1, got %d",
+			len(compiler.scope[compiler.scopeIndex].instructions))
+	}
+
+	compiler.enterScope()
+
+	if compiler.scopeIndex != 2 {
+		t.Fatalf("Incorrect scope index, expected 2, got %d", compiler.scopeIndex)
+	}
+
+	compiler.exitScope()
+
+	if compiler.scopeIndex != 1 {
+		t.Fatalf("Incorrect scope index, expected 1, got %d", compiler.scopeIndex)
+	}
+
+	compiler.exitScope()
+
+	if compiler.scopeIndex != 0 {
+		t.Fatalf("Incorrect scope index, expected 0, got %d", compiler.scopeIndex)
+	}
+
+	expected := []code.Instructions{
+		code.Make(code.OpMul),
+	}
+
+	bytecode := compiler.Bytecode()
+	testInstructions(bytecode.Instructions, expected)
+}
+
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 

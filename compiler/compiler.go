@@ -14,23 +14,33 @@ type EmittedInstruction struct {
 	Opcode   code.Opcode
 }
 
-type Compiler struct {
-	instructions code.Instructions
-	constants    []object.Object
-	symbolTable  *SymbolTable
-
+type CompilationScope struct {
+	instructions    code.Instructions
 	lastInstruction EmittedInstruction
 	prevInstruction EmittedInstruction
 }
 
-func New() *Compiler {
-	return &Compiler{
-		instructions: code.Instructions{},
-		constants:    []object.Object{},
-		symbolTable:  NewSymbolTable(),
+type Compiler struct {
+	constants   []object.Object
+	symbolTable *SymbolTable
 
+	scope      []CompilationScope
+	scopeIndex int
+}
+
+func New() *Compiler {
+	mainScope := CompilationScope{
+		instructions:    code.Instructions{},
 		lastInstruction: EmittedInstruction{},
 		prevInstruction: EmittedInstruction{},
+	}
+
+	return &Compiler{
+		constants:   []object.Object{},
+		symbolTable: NewSymbolTable(),
+
+		scope:      []CompilationScope{mainScope},
+		scopeIndex: 0,
 	}
 }
 
@@ -40,6 +50,20 @@ func NewWithState(symbols *SymbolTable, constants []object.Object) *Compiler {
 	compiler.constants = constants
 
 	return compiler
+}
+
+func (c *Compiler) enterScope() {
+	c.scopeIndex++
+	c.scope = append(c.scope, CompilationScope{
+		instructions:    code.Instructions{},
+		lastInstruction: EmittedInstruction{},
+		prevInstruction: EmittedInstruction{},
+	})
+}
+
+func (c *Compiler) exitScope() {
+	c.scopeIndex--
+	c.scope = c.scope[:len(c.scope)-1]
 }
 
 func (c *Compiler) Compile(node ast.Node) error {
@@ -157,7 +181,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		jumpTruthyPos := c.emit(code.OpJump, 9999)
 
 		//modifying jumpNotTruthy
-		postConsequencePos := len(c.instructions)
+		postConsequencePos := len(c.currentInstructions())
 		c.changeOperand(jumpNotTruthyPos, postConsequencePos)
 
 		if node.Alternative == nil {
@@ -172,7 +196,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			}
 		}
 
-		postAlternativePos := len(c.instructions)
+		postAlternativePos := len(c.currentInstructions())
 		c.changeOperand(jumpTruthyPos, postAlternativePos)
 
 	case *ast.Identifier:
@@ -250,6 +274,22 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 		c.emit(code.OpIndex)
 
+	case *ast.FunctionLiteral:
+		funcLit := &object.CompiledFunction{}
+
+		c.enterScope()
+
+		err := c.Compile(node.Body)
+		if err != nil {
+			return err
+		}
+
+		funcLit.Instructions = c.currentInstructions()
+
+		c.exitScope()
+
+		c.emit(code.OpConstant, c.addConstant(funcLit))
+
 	default:
 		return fmt.Errorf("node type not handled: %T", node)
 	}
@@ -259,7 +299,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 func (c *Compiler) Bytecode() *Bytecode {
 	return &Bytecode{
-		Instructions: c.instructions,
+		Instructions: c.currentInstructions(),
 		Constants:    c.constants,
 	}
 }
@@ -281,8 +321,11 @@ func (c *Compiler) emit(op code.Opcode, operands ...int) int {
 
 // returns start pos in c.instructions
 func (c *Compiler) addInstruction(instr code.Instructions) int {
-	posNewInstr := len(c.instructions)
-	c.instructions = append(c.instructions, instr...)
+	posNewInstr := len(c.currentInstructions())
+	updatedInstr := append(c.currentInstructions(), instr...)
+
+	c.scope[c.scopeIndex].instructions = updatedInstr
+
 	return posNewInstr
 }
 
@@ -294,30 +337,48 @@ func (c *Compiler) addConstant(constant object.Object) int {
 }
 
 func (c *Compiler) lastInstructionIsPop() bool {
-	return c.lastInstruction.Opcode == code.OpPop
+	last := c.scope[c.scopeIndex].lastInstruction
+	return last.Opcode == code.OpPop
 }
 
 func (c *Compiler) removeLastInstruction() {
-	c.instructions = c.instructions[:c.lastInstruction.Position]
-	c.lastInstruction = c.prevInstruction
+	previous := c.scope[c.scopeIndex].prevInstruction
+	last := c.scope[c.scopeIndex].lastInstruction
+
+	oldIns := c.currentInstructions()
+	newIns := oldIns[:last.Position]
+
+	c.scope[c.scopeIndex].instructions = newIns
+	c.scope[c.scopeIndex].lastInstruction = previous
 }
 
 func (c *Compiler) setLastInstruction(op code.Opcode, pos int) {
-	c.prevInstruction = c.lastInstruction
-	c.lastInstruction = EmittedInstruction{Position: pos, Opcode: op}
+	newPrev := c.scope[c.scopeIndex].lastInstruction
+	newLast := EmittedInstruction{Position: pos, Opcode: op}
+
+	c.scope[c.scopeIndex].prevInstruction = newPrev
+	c.scope[c.scopeIndex].lastInstruction = newLast
 }
 
 // example of NON type safe function. can possibly corrupt bytecode
 // by replacing different length instructions
 func (c *Compiler) replaceInstruction(pos int, newInstruction []byte) {
+	ins := c.currentInstructions()
+
 	for i := range len(newInstruction) {
-		c.instructions[pos+i] = newInstruction[i]
+		ins[pos+i] = newInstruction[i]
 	}
 }
 
 func (c *Compiler) changeOperand(opPos int, operand int) {
-	op := code.Opcode(c.instructions[opPos])
+	ins := c.currentInstructions()
+
+	op := code.Opcode(ins[opPos])
 	newInstruction := code.Make(op, operand)
 
 	c.replaceInstruction(opPos, newInstruction)
+}
+
+func (c *Compiler) currentInstructions() code.Instructions {
+	return c.scope[c.scopeIndex].instructions
 }
