@@ -521,46 +521,57 @@ func TestCompilationScopes(t *testing.T) {
 	compiler.emit(code.OpMul)
 
 	if compiler.scopeIndex != 0 {
-		t.Fatalf("Incorrect scope index, expected 0, got %d", compiler.scopeIndex)
+		t.Fatalf("Incorrect scopes index, expected 0, got %d", compiler.scopeIndex)
 	}
 
 	compiler.enterScope()
 
 	if compiler.scopeIndex != 1 {
-		t.Fatalf("Incorrect scope index, expected 1, got %d", compiler.scopeIndex)
+		t.Fatalf("Incorrect scopes index, expected 1, got %d", compiler.scopeIndex)
 	}
 
 	compiler.emit(code.OpBang)
 
-	if len(compiler.scope[compiler.scopeIndex].instructions) != 1 {
-		t.Fatalf("Incorrect number of instructions in current scope, expected 1, got %d",
-			len(compiler.scope[compiler.scopeIndex].instructions))
+	if len(compiler.scopes[compiler.scopeIndex].instructions) != 1 {
+		t.Fatalf("Incorrect number of instructions in current scopes, expected 1, got %d",
+			len(compiler.scopes[compiler.scopeIndex].instructions))
 	}
 
 	compiler.enterScope()
 
 	if compiler.scopeIndex != 2 {
-		t.Fatalf("Incorrect scope index, expected 2, got %d", compiler.scopeIndex)
+		t.Fatalf("Incorrect scopes index, expected 2, got %d", compiler.scopeIndex)
 	}
 
 	compiler.exitScope()
 
 	if compiler.scopeIndex != 1 {
-		t.Fatalf("Incorrect scope index, expected 1, got %d", compiler.scopeIndex)
+		t.Fatalf("Incorrect scopes index, expected 1, got %d", compiler.scopeIndex)
 	}
 
 	compiler.exitScope()
 
+	compiler.emit(code.OpDiv)
+
 	if compiler.scopeIndex != 0 {
-		t.Fatalf("Incorrect scope index, expected 0, got %d", compiler.scopeIndex)
+		t.Fatalf("Incorrect scopes index, expected 0, got %d", compiler.scopeIndex)
+	}
+
+	last := compiler.scopes[compiler.scopeIndex].lastInstruction
+	if last.Opcode != code.OpDiv {
+		t.Errorf("Incorrect lastInstruction.Opcode, wanted %d, got %d", code.OpDiv, last.Opcode)
 	}
 
 	expected := []code.Instructions{
 		code.Make(code.OpMul),
+		code.Make(code.OpDiv),
 	}
 
 	bytecode := compiler.Bytecode()
-	testInstructions(bytecode.Instructions, expected)
+	err := testInstructions(bytecode.Instructions, expected)
+	if err != nil {
+		t.Errorf("testInstructions failed: %s", err)
+	}
 }
 
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {

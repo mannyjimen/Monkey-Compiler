@@ -7,9 +7,9 @@ const (
 )
 
 type Symbol struct {
-	Name  string
-	Scope SymbolScope
-	Index int
+	Name   string
+	scopes SymbolScope
+	Index  int
 }
 
 type SymbolTable struct {
@@ -24,8 +24,8 @@ func NewSymbolTable() *SymbolTable {
 
 func (s *SymbolTable) Define(name string) Symbol {
 	sym := Symbol{Name: name,
-		Scope: GlobalScope,
-		Index: s.numDefinitions}
+		scopes: GlobalScope,
+		Index:  s.numDefinitions}
 
 	s.store[name] = sym
 	s.numDefinitions++

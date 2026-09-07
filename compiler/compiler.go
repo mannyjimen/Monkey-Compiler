@@ -24,7 +24,7 @@ type Compiler struct {
 	constants   []object.Object
 	symbolTable *SymbolTable
 
-	scope      []CompilationScope
+	scopes     []CompilationScope
 	scopeIndex int
 }
 
@@ -39,7 +39,7 @@ func New() *Compiler {
 		constants:   []object.Object{},
 		symbolTable: NewSymbolTable(),
 
-		scope:      []CompilationScope{mainScope},
+		scopes:     []CompilationScope{mainScope},
 		scopeIndex: 0,
 	}
 }
@@ -54,7 +54,7 @@ func NewWithState(symbols *SymbolTable, constants []object.Object) *Compiler {
 
 func (c *Compiler) enterScope() {
 	c.scopeIndex++
-	c.scope = append(c.scope, CompilationScope{
+	c.scopes = append(c.scopes, CompilationScope{
 		instructions:    code.Instructions{},
 		lastInstruction: EmittedInstruction{},
 		prevInstruction: EmittedInstruction{},
@@ -63,7 +63,7 @@ func (c *Compiler) enterScope() {
 
 func (c *Compiler) exitScope() {
 	c.scopeIndex--
-	c.scope = c.scope[:len(c.scope)-1]
+	c.scopes = c.scopes[:len(c.scopes)-1]
 }
 
 func (c *Compiler) Compile(node ast.Node) error {
@@ -324,7 +324,7 @@ func (c *Compiler) addInstruction(instr code.Instructions) int {
 	posNewInstr := len(c.currentInstructions())
 	updatedInstr := append(c.currentInstructions(), instr...)
 
-	c.scope[c.scopeIndex].instructions = updatedInstr
+	c.scopes[c.scopeIndex].instructions = updatedInstr
 
 	return posNewInstr
 }
@@ -337,27 +337,27 @@ func (c *Compiler) addConstant(constant object.Object) int {
 }
 
 func (c *Compiler) lastInstructionIsPop() bool {
-	last := c.scope[c.scopeIndex].lastInstruction
+	last := c.scopes[c.scopeIndex].lastInstruction
 	return last.Opcode == code.OpPop
 }
 
 func (c *Compiler) removeLastInstruction() {
-	previous := c.scope[c.scopeIndex].prevInstruction
-	last := c.scope[c.scopeIndex].lastInstruction
+	previous := c.scopes[c.scopeIndex].prevInstruction
+	last := c.scopes[c.scopeIndex].lastInstruction
 
 	oldIns := c.currentInstructions()
 	newIns := oldIns[:last.Position]
 
-	c.scope[c.scopeIndex].instructions = newIns
-	c.scope[c.scopeIndex].lastInstruction = previous
+	c.scopes[c.scopeIndex].instructions = newIns
+	c.scopes[c.scopeIndex].lastInstruction = previous
 }
 
 func (c *Compiler) setLastInstruction(op code.Opcode, pos int) {
-	newPrev := c.scope[c.scopeIndex].lastInstruction
+	newPrev := c.scopes[c.scopeIndex].lastInstruction
 	newLast := EmittedInstruction{Position: pos, Opcode: op}
 
-	c.scope[c.scopeIndex].prevInstruction = newPrev
-	c.scope[c.scopeIndex].lastInstruction = newLast
+	c.scopes[c.scopeIndex].prevInstruction = newPrev
+	c.scopes[c.scopeIndex].lastInstruction = newLast
 }
 
 // example of NON type safe function. can possibly corrupt bytecode
@@ -380,5 +380,5 @@ func (c *Compiler) changeOperand(opPos int, operand int) {
 }
 
 func (c *Compiler) currentInstructions() code.Instructions {
-	return c.scope[c.scopeIndex].instructions
+	return c.scopes[c.scopeIndex].instructions
 }
