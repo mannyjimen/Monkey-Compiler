@@ -511,6 +511,61 @@ func TestFunctions(t *testing.T) {
 				code.Make(code.OpPop),
 			},
 		},
+		{
+			`fn() { 5 + 10; }`,
+			[]any{
+				5,
+				10,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpAdd),
+					code.Make(code.OpReturnValue)},
+			},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 2),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`fn() { 7; 5; }`,
+			[]any{
+				7,
+				5,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpPop),
+					code.Make(code.OpConstant, 1),
+					code.Make(code.OpReturnValue)},
+			},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 2),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`fn() {return 5;}`,
+			[]any{
+				5,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0),
+					code.Make(code.OpReturnValue)},
+			},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			`fn() {}`,
+			[]any{[]code.Instructions{
+				code.Make(code.OpReturn)},
+			},
+			[]code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+			},
+		},
 	}
 	runCompilerTests(t, tests)
 }
@@ -578,7 +633,7 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 	t.Helper()
 
 	for _, tt := range tests {
-		program := parse(tt.input)
+		program := parse(t, tt.input)
 
 		compiler := New()
 		err := compiler.Compile(program)
@@ -696,8 +751,18 @@ func concatInstructions(allInstructions []code.Instructions) code.Instructions {
 	return out
 }
 
-func parse(input string) *ast.Program {
+func parse(t *testing.T, input string) *ast.Program {
+	t.Helper()
+
 	l := lexer.New(input)
 	p := parser.New(l)
-	return p.ParseProgram()
+
+	program := p.ParseProgram()
+	errors := p.Errors()
+
+	if len(errors) > 0 {
+		t.Fatalf("parser had %d error/s: %v", len(errors), errors)
+	}
+
+	return program
 }
