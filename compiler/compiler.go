@@ -61,9 +61,13 @@ func (c *Compiler) enterScope() {
 	})
 }
 
-func (c *Compiler) exitScope() {
+func (c *Compiler) exitScope() code.Instructions {
+	ins := c.currentInstructions()
+
 	c.scopeIndex--
 	c.scopes = c.scopes[:len(c.scopes)-1]
+
+	return ins
 }
 
 func (c *Compiler) Compile(node ast.Node) error {
@@ -173,7 +177,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return err
 		}
 
-		if c.lastInstructionIsPop() {
+		if c.lastInstructionIs(code.OpPop) {
 			c.removeLastInstruction()
 		}
 
@@ -191,7 +195,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			if err != nil {
 				return err
 			}
-			if c.lastInstructionIsPop() {
+			if c.lastInstructionIs(code.OpPop) {
 				c.removeLastInstruction()
 			}
 		}
@@ -275,8 +279,6 @@ func (c *Compiler) Compile(node ast.Node) error {
 		c.emit(code.OpIndex)
 
 	case *ast.FunctionLiteral:
-		funcLit := &object.CompiledFunction{}
-
 		c.enterScope()
 
 		err := c.Compile(node.Body)
@@ -284,11 +286,30 @@ func (c *Compiler) Compile(node ast.Node) error {
 			return err
 		}
 
-		funcLit.Instructions = c.currentInstructions()
+		if c.lastInstructionIs(code.OpPop) {
+			lastPos := c.scopes[c.scopeIndex].lastInstruction.Position
+			c.replaceInstruction(lastPos, code.Make(code.OpReturnValue))
 
-		c.exitScope()
+			c.scopes[c.scopeIndex].lastInstruction.Opcode = code.OpReturnValue
+		}
+
+		if !c.lastInstructionIs(code.OpReturnValue) {
+			c.emit(code.OpReturn)
+		}
+
+		funcIns := c.exitScope()
+
+		funcLit := &object.CompiledFunction{Instructions: funcIns}
 
 		c.emit(code.OpConstant, c.addConstant(funcLit))
+
+	case *ast.ReturnStatement:
+		err := c.Compile(node.ReturnValue)
+		if err != nil {
+			return err
+		}
+
+		c.emit(code.OpReturnValue)
 
 	default:
 		return fmt.Errorf("node type not handled: %T", node)
@@ -336,9 +357,12 @@ func (c *Compiler) addConstant(constant object.Object) int {
 	return newConstIndex
 }
 
-func (c *Compiler) lastInstructionIsPop() bool {
+func (c *Compiler) lastInstructionIs(op code.Opcode) bool {
+	if len(c.currentInstructions()) == 0 {
+		return false
+	}
 	last := c.scopes[c.scopeIndex].lastInstruction
-	return last.Opcode == code.OpPop
+	return last.Opcode == op
 }
 
 func (c *Compiler) removeLastInstruction() {
